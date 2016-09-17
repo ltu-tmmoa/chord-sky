@@ -1,0 +1,29 @@
+# Object files.
+*.o
+*.a
+*.so
+
+# Temporary files.
+*.swp
+*~
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+_testmain.go
+
+# Output files.
+*.exe
+*.test
+*.prof
+*.out
+
+# Temporary folders.
+_obj
+_test
+
+# Architecture specific extensions/prefixes.
+*.[568vq]
+[568vq].out
+
