@@ -31,20 +31,15 @@ func hash(a interface{}, bits *int) *ID {
 	return id
 }
 
-// Cmp resolves ordering of this and given ID:s.
-//
-// Returns -1, 0 or 1 if given node is lesser than, equal to, or greater than
-// this node.
-func (id *ID) Cmp(other *ID) int {
+func (id *ID) cmp(other *ID) int {
 	return id.value.Cmp(&other.value)
 }
 
-// Diff calculates the Chord ring distance between this and given ID:s.
-func (id *ID) Diff(other *ID) *ID {
+func (id *ID) diff(other *big.Int) *ID {
 	diff := new(ID)
 
 	// diff = id - other
-	(&diff.value).Sub(&id.value, &other.value)
+	(&diff.value).Sub(&id.value, other)
 
 	// ceil = 2^bits
 	ceil := big.Int{}
@@ -57,9 +52,8 @@ func (id *ID) Diff(other *ID) *ID {
 	return diff
 }
 
-// Eq determines if this and given ID:s are equal.
-func (id *ID) Eq(other *ID) bool {
-	return id.Cmp(other) == 0
+func (id *ID) eq(other *ID) bool {
+	return id.cmp(other) == 0
 }
 
 // String produces a canonical string representation of this ID.
