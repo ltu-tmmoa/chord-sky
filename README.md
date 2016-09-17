@@ -41,3 +41,30 @@ If wanting to use the [Atom editor](https://atom.io), the `go-plus` plug-in is
 the only one required to make the editor into a capable _Go_ IDE. It will
 prompt you to download a set of related plug-ins once installed. Make sure that
 _Go_ is installed and a suitable `GOPATH` is set before installing `go-plus`.
+
+### Cloning the Repository
+
+_Go_ uses a rather complicated way to manage code and its dependencies. In
+order to make sure that no problems arise from using an unsuitable repository
+folder location, please follow the following steps.
+
+1. Make sure that a correct `GOPATH` is set using the following command:
+```sh
+$ go env
+```
+   It should produce a list containing the following keys, among many others.
+   As long as the values are set things should be in order.
+```sh
+GOPATH="/home/user/projects/go"
+GOROOT="/usr/local/go"
+```
+2. Download the repository using the following command:
+```sh
+$ go get github.com/ltu-tmmoa/chord-sky
+```
+3. Change the repository origin using the following commands:
+```sh
+$ cd $GOPATH/src/github.com/ltu-tmmoa/chord-sky
+$ git remote rm origin
+$ git remote add origin git@github.com:ltu-tmmoa/chord-sky.git
+```
