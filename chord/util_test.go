@@ -13,10 +13,6 @@ func (s stringAddr) String() string {
 	return string(s)
 }
 
-// newID creates new ID, without hashing given value a.
-func newID(a, bits int) *ID {
-	id := new(ID)
-	id.value = *big.NewInt(int64(a))
-	id.bits = &bits
-	return id
+func newHash64(value int64, bits int) *Hash {
+	return newHash(*big.NewInt(value), bits)
 }

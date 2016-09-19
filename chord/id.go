@@ -1,62 +1,27 @@
 package chord
 
-import (
-	"crypto/sha1"
-	"fmt"
-	"math/big"
-)
+import "math/big"
 
-// ID identifies some Chord node or key.
-type ID struct {
-	value big.Int
-	bits  *int
-}
+// ID identifies some Chod node or key.
+type ID interface {
+	// AsInt turns ID into big.Int representation.
+	AsInt() *big.Int
 
-func hash(a interface{}, bits *int) *ID {
-	// ceil = 2^bits
-	ceil := big.Int{}
-	ceil.Exp(big.NewInt(2), big.NewInt(int64(*bits)), nil)
+	// Bits returns amount of significant bits in ID.
+	Bits() int
 
-	// hash = sha1(a)
-	hash := sha1.Sum([]byte(fmt.Sprint(a)))
+	// Cmp compares this ID with given ID.
+	//
+	// Returns -1, 0 or 1 depending on if given other ID is lesser than, equal
+	// to, or greater than this ID.
+	Cmp(other ID) int
 
-	// value = hash % ceil
-	value := big.Int{}
-	value.SetBytes(hash[:])
-	value.Mod(&value, &ceil)
+	// Diff calculates the difference between this and given other ID.
+	Diff(other ID) ID
 
-	id := new(ID)
-	id.value = value
-	id.bits = bits
-	return id
-}
+	// Eq determines if this and given other ID are equal.
+	Eq(other ID) bool
 
-func (id *ID) cmp(other *ID) int {
-	return id.value.Cmp(&other.value)
-}
-
-func (id *ID) diff(other *big.Int) *ID {
-	diff := new(ID)
-
-	// diff = id - other
-	(&diff.value).Sub(&id.value, other)
-
-	// ceil = 2^bits
-	ceil := big.Int{}
-	ceil.Exp(big.NewInt(2), big.NewInt(int64(*id.bits)), nil)
-
-	// diff = diff % ceil
-	(&diff.value).Mod(&diff.value, &ceil)
-
-	diff.bits = id.bits
-	return diff
-}
-
-func (id *ID) eq(other *ID) bool {
-	return id.cmp(other) == 0
-}
-
-// String produces a canonical string representation of this ID.
-func (id *ID) String() string {
-	return id.value.String()
+	// String turns ID into its canonical string representation.
+	String() string
 }
