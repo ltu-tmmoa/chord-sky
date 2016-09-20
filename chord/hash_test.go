@@ -33,7 +33,7 @@ func TestHashDiff(t *testing.T) {
 	if r := b.Diff(b).AsInt().Int64(); r != 0 {
 		t.Errorf("%v.Diff(%v) %v != 0", b, b, r)
 	}
-	if r := b.Diff(a).AsInt().Int64(); r != 4 {
+	if r := b.Diff(a).AsInt().Int64(); r != -4 {
 		t.Errorf("%v.Diff(%v) %v != -3", b, a, r)
 	}
 }
