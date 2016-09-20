@@ -98,7 +98,7 @@ func (node *Node) FindSuccessor(id ID) *Node {
 // See Chord paper figure 4.
 func (node *Node) findPredecessor(id ID) *Node {
 	node0 := node
-	for id.Cmp(node0) <= 0 && id.Cmp(node0.Successor()) > 0 {
+	for id.Cmp(node0) <= 0 || id.Cmp(node0.Successor()) > 0 {
 		node0 = node0.closestPrecedingFinger(id)
 	}
 	return node0
@@ -119,12 +119,12 @@ func (node *Node) closestPrecedingFinger(id ID) *Node {
 // Join makes this node join the ring of given other node.
 //
 // If given node is nil, this node will form its own ring.
-func (node *Node) Join(other *Node) {
-	if other != nil {
-		if node.Bits() != other.Bits() {
-			node.id = hash(node.addr, other.Bits())
+func (node *Node) Join(node0 *Node) {
+	if node0 != nil {
+		if node.Bits() != node0.Bits() {
+			node.id = hash(node.addr, node0.Bits())
 		}
-		node.initFingerTable(other)
+		node.initFingerTable(node0)
 		node.updateOthers()
 		// TODO: Move keys in (predecessor,n] from successor
 	} else {
@@ -195,10 +195,22 @@ func (node *Node) updateFingerTable(s *Node, i int) {
 
 // PrintRing outputs this node's ring to console.
 func (node *Node) PrintRing() {
-	node0 := node
-	for ; node0 != nil && !node.Eq(node0.id); node0 = node0.Successor() {
+	stop := node.Predecessor()
+	for node0 := node; node0 != nil; node0 = node0.Successor() {
 		fmt.Println(node0.String())
+		if stop.Eq(node0) {
+			break
+		}
 	}
+}
+
+// Ring produces an array of all nodes in this node's ring.
+func (node *Node) Ring() []*Node {
+	nodes := make([]*Node, node.Bits())
+	for node0 := node; node0 != nil && !node.Eq(node0); node0 = node0.Successor() {
+		nodes = append(nodes, node0)
+	}
+	return nodes
 }
 
 // String produces canonical string representation of this node.
