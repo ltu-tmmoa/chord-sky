@@ -35,8 +35,8 @@ func hash(a interface{}, bits int) *Hash {
 	return newHash(value, bits)
 }
 
-// AsInt turns hash into big.Int representation.
-func (hash *Hash) AsInt() *big.Int {
+// AsBigInt turns hash into big.Int representation.
+func (hash *Hash) AsBigInt() *big.Int {
 	return &hash.value
 }
 
@@ -47,7 +47,7 @@ func (hash *Hash) Bits() int {
 
 // Cmp compares hash to given ID.
 func (hash *Hash) Cmp(other ID) int {
-	return hash.value.Cmp(other.AsInt())
+	return hash.value.Cmp(other.AsBigInt())
 }
 
 // Diff calculates the difference between this hash and given ID.
@@ -55,7 +55,7 @@ func (hash *Hash) Diff(other ID) ID {
 	diff := new(Hash)
 
 	// diff = hash - other
-	diff.value.Sub(&hash.value, other.AsInt())
+	diff.value.Sub(&hash.value, other.AsBigInt())
 
 	// ceil = 2^bits
 	//ceil := big.Int{}

@@ -24,16 +24,16 @@ func TestHashDiff(t *testing.T) {
 	a := newHash64(5, M3)
 	b := newHash64(1, M3)
 
-	if r := a.Diff(a).AsInt().Int64(); r != 0 {
+	if r := a.Diff(a).AsBigInt().Int64(); r != 0 {
 		t.Errorf("%v.Diff(%v) %v != 0", a, a, r)
 	}
-	if r := a.Diff(b).AsInt().Int64(); r != 4 {
+	if r := a.Diff(b).AsBigInt().Int64(); r != 4 {
 		t.Errorf("%v.Diff(%v) %v != 3", a, b, r)
 	}
-	if r := b.Diff(b).AsInt().Int64(); r != 0 {
+	if r := b.Diff(b).AsBigInt().Int64(); r != 0 {
 		t.Errorf("%v.Diff(%v) %v != 0", b, b, r)
 	}
-	if r := b.Diff(a).AsInt().Int64(); r != -4 {
+	if r := b.Diff(a).AsBigInt().Int64(); r != -4 {
 		t.Errorf("%v.Diff(%v) %v != -3", b, a, r)
 	}
 }

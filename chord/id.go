@@ -5,7 +5,7 @@ import "math/big"
 // ID identifies some Chod node or key.
 type ID interface {
 	// AsInt turns ID into big.Int representation.
-	AsInt() *big.Int
+	AsBigInt() *big.Int
 
 	// Bits returns amount of significant bits in ID.
 	Bits() int

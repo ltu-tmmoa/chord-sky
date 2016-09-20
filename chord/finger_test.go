@@ -11,7 +11,7 @@ func TestFingerStart(t *testing.T) {
 	expectNodeFingerStart := func(node *Node, finger int, expected int64) {
 		actual := node.Finger(finger).Start()
 
-		if actual.AsInt().Int64() != expected {
+		if actual.AsBigInt().Int64() != expected {
 			t.Errorf("finger[%d].start %v != expected %v", finger, actual, expected)
 		}
 	}
@@ -28,7 +28,7 @@ func TestFingerInterval(t *testing.T) {
 	expectNodeFingerInterval := func(node *Node, finger int, expectedStart, expectedStop int64) {
 		actualStart, actualStop := node.Finger(finger).Interval()
 
-		if actualStart.AsInt().Int64() != expectedStart || actualStop.AsInt().Int64() != expectedStop {
+		if actualStart.AsBigInt().Int64() != expectedStart || actualStop.AsBigInt().Int64() != expectedStop {
 			t.Errorf("finger[%d].interval [%v,%v) != expected [%v,%v)", finger, actualStart, actualStop, expectedStart, expectedStop)
 		}
 	}
