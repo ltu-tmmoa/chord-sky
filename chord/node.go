@@ -93,13 +93,16 @@ func (node *Node) FindSuccessor(id ID) *Node {
 	return node0.Successor()
 }
 
-// Asks node to find id' predecessor.
+// Asks node to find id's predecessor.
 //
 // See Chord paper figure 4.
 func (node *Node) findPredecessor(id ID) *Node {
 	node0 := node
-	for id.Cmp(node0) <= 0 || id.Cmp(node0.Successor()) > 0 {
+	for !(id.Cmp(node0) > 0 && id.Cmp(node0.Successor()) <= 0) {
 		node0 = node0.closestPrecedingFinger(id)
+		if node0.Eq(node) {
+			break
+		}
 	}
 	return node0
 }
@@ -136,7 +139,7 @@ func (node *Node) Join(node0 *Node) {
 	}
 }
 
-// Initialize finger table of local node; node0 is an arbitary node already in
+// Initializes finger table of local node; node0 is an arbitary node already in
 // the network.
 //
 // See Chord paper figure 6.
@@ -167,6 +170,10 @@ func (node *Node) initFingerTable(node0 *Node) {
 //
 // See Chord paper figure 6.
 func (node *Node) updateOthers() {
+
+	// TODO: Not working properly. Should update finger tables of all nodes
+	// that should refer to this node.
+
 	m := node.Bits()
 	for i := 1; i <= m; i++ {
 		var id ID
