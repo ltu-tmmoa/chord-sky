@@ -37,9 +37,9 @@ func NewNodeRing(addr net.Addr, bits int) *Node {
 	return node
 }
 
-// AsBigInt returns node identifier as a big.Int.
-func (node *Node) AsBigInt() *big.Int {
-	return node.id.AsBigInt()
+// BigInt returns node identifier as a big.Int.
+func (node *Node) BigInt() *big.Int {
+	return node.id.BigInt()
 }
 
 // Bits returns amount of significant bits in node identifier.

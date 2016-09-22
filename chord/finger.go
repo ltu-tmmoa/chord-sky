@@ -19,7 +19,7 @@ func newFinger(id ID, i int) *Finger {
 
 // (n + 2^(i-1)) mod (2^m)
 func fingerStart(id ID, i int) ID {
-	n := id.AsBigInt()
+	n := id.BigInt()
 	m := big.NewInt(int64(id.Bits()))
 	two := big.NewInt(2)
 
