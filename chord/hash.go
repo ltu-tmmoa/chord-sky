@@ -58,11 +58,11 @@ func (hash *Hash) Diff(other ID) ID {
 	diff.value.Sub(&hash.value, other.AsBigInt())
 
 	// ceil = 2^bits
-	//ceil := big.Int{}
-	//ceil.Exp(big.NewInt(2), big.NewInt(int64(hash.bits)), nil)
+	ceil := big.Int{}
+	ceil.Exp(big.NewInt(2), big.NewInt(int64(hash.bits)), nil)
 
 	// diff = diff % ceil
-	//diff.value.Mod(&diff.value, &ceil)
+	diff.value.Mod(&diff.value, &ceil)
 
 	diff.bits = hash.bits
 	return diff
