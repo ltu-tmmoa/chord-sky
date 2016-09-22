@@ -184,6 +184,7 @@ func (node *Node) updateOthers() {
 			id = node.Diff(newHash(subtrahend, m))
 		}
 		predecessor := node.findPredecessor(id)
+		fmt.Printf("ID: %v, PRED: %v\n", id, predecessor)
 		predecessor.updateFingerTable(node, i)
 	}
 }
@@ -193,7 +194,8 @@ func (node *Node) updateOthers() {
 // See Chord paper figure 6.
 func (node *Node) updateFingerTable(s *Node, i int) {
 	finger := node.finger(i)
-	if s.Cmp(node) >= 0 && s.Cmp(finger.node) < 0 {
+	fmt.Printf("  FINGER: (%v) %v\n", i, finger)
+	if s.Cmp(node) >= 0 && s.Cmp(finger.node) < 0 { // TODO: Always fails.
 		finger.node = s
 		predecessor := node.predecessor
 		predecessor.updateFingerTable(s, i)
