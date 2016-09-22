@@ -1,6 +1,9 @@
 package chord
 
-import "math/big"
+import (
+	"math/big"
+	"fmt"
+)
 
 // Finger represents a Chord node finger.
 type Finger struct {
@@ -55,4 +58,9 @@ func (finger *Finger) Interval() (ID, ID) {
 // Node yields Chord node associated with finger.
 func (finger *Finger) Node() *Node {
 	return finger.node
+}
+
+// String produces a canonical string representation of this Finger.
+func (finger *Finger) String() string {
+	return fmt.Sprintf("[%v, %v) (%v)", finger.start, finger.stop, finger.node)
 }
