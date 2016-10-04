@@ -25,10 +25,9 @@ func TestNodeJoin(t *testing.T) {
 		fmt.Printf("Node: %v\n", node)
 		for i := 1; i <= M3; i++ {
 			finger := node.finger(i)
-			start, stop := finger.Interval()
+			interval := finger.Interval()
 			fmt.Printf("  Finger:      %v\n", i)
-			fmt.Printf("    Start:       %v\n", finger.start)
-			fmt.Printf("    Interval:    [%v, %v)\n", start.BigInt().Int64(), stop.BigInt().Int64())
+			fmt.Printf("    Interval:    %v\n", interval)
 			fmt.Printf("    Node:        %v\n", finger.Node())
 		}
 		fmt.Printf("  Predecessor: %v\n", node.predecessor)

@@ -1,21 +1,22 @@
 package chord
 
 import (
-	"math/big"
 	"fmt"
+	"math/big"
 )
 
 // Finger represents a Chord node finger.
 type Finger struct {
-	start ID
-	stop  ID
-	node  *Node
+	interval FingerInterval
+	node     *Node
 }
 
 func newFinger(id ID, i int) *Finger {
 	finger := new(Finger)
-	finger.start = fingerStart(id, i)
-	finger.stop = fingerStart(id, i+1)
+	finger.interval = FingerInterval{
+		start: fingerStart(id, i),
+		stop:  fingerStart(id, i+1),
+	}
 	finger.node = nil
 	return finger
 }
@@ -47,12 +48,12 @@ func fingerStart(id ID, i int) ID {
 
 // Start yields the Chord node finger[i].start finger ID.
 func (finger *Finger) Start() ID {
-	return finger.start
+	return finger.interval.start
 }
 
 // Interval yields finger[i].start and finger[i + 1].start.
-func (finger *Finger) Interval() (ID, ID) {
-	return finger.start, finger.stop
+func (finger *Finger) Interval() *FingerInterval {
+	return &finger.interval
 }
 
 // Node yields Chord node associated with finger.
@@ -62,5 +63,31 @@ func (finger *Finger) Node() *Node {
 
 // String produces a canonical string representation of this Finger.
 func (finger *Finger) String() string {
-	return fmt.Sprintf("[%v, %v) (%v)", finger.start, finger.stop, finger.node)
+	return fmt.Sprintf("%v (%v)", finger.interval.String(), finger.node.String())
+}
+
+// FingerInterval holds two ID:s, representing a [start, stop) range of ID:s.
+type FingerInterval struct {
+	start ID
+	stop  ID
+}
+
+// Start yields the Chord node finger[i].start finger ID.
+func (interval *FingerInterval) Start() ID {
+	return interval.start
+}
+
+// Stop yields the Chord node finger[i + 1].start finger ID.
+func (interval *FingerInterval) Stop() ID {
+	return interval.stop
+}
+
+// Contains determines if given ID is contained within the interval.
+func (interval *FingerInterval) Contains(other ID) bool {
+	return idIntervalContainsIE(interval.start, interval.stop, other)
+}
+
+// String produces a canonical string representation of this Finger.
+func (interval *FingerInterval) String() string {
+	return fmt.Sprintf("[%v, %v)", interval.start, interval.stop)
 }

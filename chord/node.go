@@ -98,7 +98,7 @@ func (node *Node) FindSuccessor(id ID) *Node {
 // See Chord paper figure 4.
 func (node *Node) findPredecessor(id ID) *Node {
 	node0 := node
-	for !(id.Cmp(node0) > 0 && id.Cmp(node0.Successor()) <= 0) {
+	for !idIntervalContainsEI(node0, node0.Successor(), id) {
 		node0 = node0.closestPrecedingFinger(id)
 		if node0.Eq(node) {
 			break
@@ -112,7 +112,7 @@ func (node *Node) findPredecessor(id ID) *Node {
 // See Chord paper figure 4.
 func (node *Node) closestPrecedingFinger(id ID) *Node {
 	for i := node.Bits(); i > 0; i-- {
-		if f := node.finger(i).node; f.Cmp(node) > 0 && f.Cmp(id) < 0 {
+		if f := node.finger(i).node; idIntervalContainsEE(node, id, f) {
 			return f
 		}
 	}
@@ -146,7 +146,7 @@ func (node *Node) Join(node0 *Node) {
 func (node *Node) initFingerTable(node0 *Node) {
 	// Add this node to node0 node's ring.
 	{
-		successor := node0.FindSuccessor(node.finger(1).start)
+		successor := node0.FindSuccessor(node.finger(1).Start())
 		node.finger(1).node = successor
 		node.predecessor = successor.predecessor
 		successor.predecessor = node
@@ -157,10 +157,10 @@ func (node *Node) initFingerTable(node0 *Node) {
 		for i := 1; i < m; i++ {
 			this := node.finger(i)
 			next := node.finger(i + 1)
-			if next.start.Cmp(node) >= 0 && next.start.Cmp(this.node) < 0 {
+			if idIntervalContainsIE(node, this.Node(), next.Start()) {
 				next.node = this.node
 			} else {
-				next.node = node0.FindSuccessor(next.start)
+				next.node = node0.FindSuccessor(next.Start())
 			}
 		}
 	}
@@ -194,8 +194,9 @@ func (node *Node) updateOthers() {
 // See Chord paper figure 6.
 func (node *Node) updateFingerTable(s *Node, i int) {
 	finger := node.finger(i)
-	fmt.Printf("  FINGER: (%v) %v\n", i, finger)
-	if s.Cmp(node) >= 0 && s.Cmp(finger.node) < 0 { // TODO: Always fails.
+	fmt.Printf("  FINGER: (%v) %v contains %v\n", i, finger.Interval().String(), s.BigInt().String())
+	if finger.Interval().Contains(s) {
+		fmt.Printf("    TRUE\n")
 		finger.node = s
 		predecessor := node.predecessor
 		predecessor.updateFingerTable(s, i)

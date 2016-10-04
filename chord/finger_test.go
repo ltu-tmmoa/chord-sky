@@ -26,10 +26,10 @@ func TestFingerStart(t *testing.T) {
 
 func TestFingerInterval(t *testing.T) {
 	expectNodeFingerInterval := func(node *Node, finger int, expectedStart, expectedStop int64) {
-		actualStart, actualStop := node.Finger(finger).Interval()
+		actualInterval := node.Finger(finger).Interval()
 
-		if actualStart.BigInt().Int64() != expectedStart || actualStop.BigInt().Int64() != expectedStop {
-			t.Errorf("finger[%d].interval [%v,%v) != expected [%v,%v)", finger, actualStart, actualStop, expectedStart, expectedStop)
+		if actualInterval.Start().BigInt().Int64() != expectedStart || actualInterval.Stop().BigInt().Int64() != expectedStop {
+			t.Errorf("finger[%d].interval [%v,%v) != expected [%v,%v)", finger, actualInterval.Start(), actualInterval.Stop(), expectedStart, expectedStop)
 		}
 	}
 	// See figure 3(b), Chord paper.
