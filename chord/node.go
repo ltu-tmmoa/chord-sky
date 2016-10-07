@@ -162,10 +162,6 @@ func (node *Node) initFingerTable(node0 *Node) {
 //
 // See Chord paper figure 6.
 func (node *Node) updateOthers() {
-
-	// TODO: Not working properly. Should update finger tables of all nodes
-	// that should refer to this node.
-
 	m := node.Bits()
 	for i := 1; i <= m; i++ {
 		var id ID
@@ -176,9 +172,6 @@ func (node *Node) updateOthers() {
 			id = node.Diff(newHash(subtrahend, m))
 		}
 		predecessor := node.findPredecessor(id)
-		/*if predecessor.Eq(node) {
-			predecessor = node.predecessor
-		}*/
 		fmt.Printf("ID: %v, PRED: %v\n", id, predecessor)
 		predecessor.updateFingerTable(node, i)
 	}
