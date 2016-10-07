@@ -135,8 +135,11 @@ func (node *Node) initFingerTable(node0 *Node) {
 	// Add this node to node0 node's ring.
 	{
 		successor := node0.FindSuccessor(node.finger(1).Start())
+
 		node.finger(1).node = successor
 		node.predecessor = successor.predecessor
+
+		successor.predecessor.finger(1).node = node
 		successor.predecessor = node
 	}
 	// Update this node's finger table.
