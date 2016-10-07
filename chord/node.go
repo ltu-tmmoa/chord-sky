@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"math/rand"
 )
 
 // Node represents a potential member of a Chord ring.
@@ -197,6 +198,32 @@ func (node *Node) updateFingerTable(s *Node, i int) {
 	} else {
 		fmt.Print(" == FALSE\n")
 	}
+}
+
+// Stabilize attempts to fix any ring issues arising from joining or leaving Chord ring nodes.
+//
+// Recommended to be called periodically in order to ensure node data integrity.
+func (node *Node) Stabilize() {
+	x := node.Successor().Predecessor()
+	if idIntervalContainsEE(node, node.Successor(), x) {
+		node.finger(1).node = x
+	}
+	node.Successor().notify(node)
+}
+
+func (node *Node) notify(node0 *Node) {
+	if node.predecessor == nil || idIntervalContainsEE(node.predecessor, node, node0) {
+		node.predecessor = node0
+	}
+}
+
+// FixFingers refreshes this node's finger table entries in relation to Chord ring changes.
+//
+// Recommended to be called periodically in order to ensure finger table integrity.
+func (node *Node) FixFingers() {
+	i := rand.Int() % len(node.fingers)
+	finger := node.fingers[i]
+	finger.node = node.FindSuccessor(finger.Start())
 }
 
 // PrintRing outputs this node's ring to console.
