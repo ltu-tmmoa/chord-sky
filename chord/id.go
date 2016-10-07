@@ -2,7 +2,7 @@ package chord
 
 import "math/big"
 
-// ID identifies some Chod node or key.
+// ID identifies some Chord node or key.
 type ID interface {
 	// BigInt turns ID into big.Int representation.
 	BigInt() *big.Int

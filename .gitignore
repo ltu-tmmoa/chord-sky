@@ -19,9 +19,15 @@ _testmain.go
 *.prof
 *.out
 
+# Project files.
+*.iml
+
 # Temporary folders.
 _obj
 _test
+
+# Project folders.
+.idea/
 
 # Architecture specific extensions/prefixes.
 *.[568vq]

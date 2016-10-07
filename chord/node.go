@@ -28,15 +28,6 @@ func newNode(addr net.Addr, id *Hash) *Node {
 	return node
 }
 
-// NewNodeRing creates a new node in its own ring.
-//
-// The created ring has a capacity of 2^bits node members.
-func NewNodeRing(addr net.Addr, bits int) *Node {
-	node := newNode(addr, hash(addr, bits))
-	node.Join(nil)
-	return node
-}
-
 // BigInt returns node identifier as a big.Int.
 func (node *Node) BigInt() *big.Int {
 	return node.id.BigInt()
@@ -100,9 +91,6 @@ func (node *Node) findPredecessor(id ID) *Node {
 	node0 := node
 	for !idIntervalContainsEI(node0, node0.Successor(), id) {
 		node0 = node0.closestPrecedingFinger(id)
-		if node0.Eq(node) {
-			break
-		}
 	}
 	return node0
 }
@@ -139,7 +127,7 @@ func (node *Node) Join(node0 *Node) {
 	}
 }
 
-// Initializes finger table of local node; node0 is an arbitary node already in
+// Initializes finger table of local node; node0 is an arbitrary node already in
 // the network.
 //
 // See Chord paper figure 6.
@@ -158,7 +146,7 @@ func (node *Node) initFingerTable(node0 *Node) {
 			this := node.finger(i)
 			next := node.finger(i + 1)
 			if idIntervalContainsIE(node, this.Node(), next.Start()) {
-				next.node = this.node
+				next.node = this.Node()
 			} else {
 				next.node = node0.FindSuccessor(next.Start())
 			}
@@ -184,6 +172,9 @@ func (node *Node) updateOthers() {
 			id = node.Diff(newHash(subtrahend, m))
 		}
 		predecessor := node.findPredecessor(id)
+		/*if predecessor.Eq(node) {
+			predecessor = node.predecessor
+		}*/
 		fmt.Printf("ID: %v, PRED: %v\n", id, predecessor)
 		predecessor.updateFingerTable(node, i)
 	}
@@ -194,12 +185,14 @@ func (node *Node) updateOthers() {
 // See Chord paper figure 6.
 func (node *Node) updateFingerTable(s *Node, i int) {
 	finger := node.finger(i)
-	fmt.Printf("  FINGER: (%v) %v contains %v\n", i, finger.Interval().String(), s.BigInt().String())
-	if finger.Interval().Contains(s) {
-		fmt.Printf("    TRUE\n")
+	fmt.Printf("  i %v: [%v, %v) contains %v", i, node.BigInt(), finger.Node().BigInt(), s.BigInt())
+	if idIntervalContainsIE(node, finger.Node(), s) {
+		fmt.Printf(" == TRUE (%v)\n", s)
 		finger.node = s
 		predecessor := node.predecessor
 		predecessor.updateFingerTable(s, i)
+	} else {
+		fmt.Print(" == FALSE\n")
 	}
 }
 
