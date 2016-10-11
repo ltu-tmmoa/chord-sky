@@ -182,8 +182,8 @@ func (node *Node) updateOthers() {
 // See Chord paper figure 6.
 func (node *Node) updateFingerTable(s *Node, i int) {
 	finger := node.finger(i)
-	fmt.Printf("  i %v: [%v, %v) contains %v", i, node.BigInt(), finger.Node().BigInt(), s.BigInt())
-	if idIntervalContainsIE(node, finger.Node(), s) {
+	fmt.Printf("  i %v: [%v, %v) contains %v", i, finger.Start(), finger.Node(), s.BigInt())
+	if idIntervalContainsIE(finger.Start(), finger.Node(), s) {
 		fmt.Printf(" == TRUE (%v)\n", s)
 		finger.node = s
 		predecessor := node.predecessor
@@ -221,22 +221,7 @@ func (node *Node) FixFingers() {
 
 // PrintRing outputs this node's ring to console.
 func (node *Node) PrintRing() {
-	stop := node.Predecessor()
-	for node0 := node; node0 != nil; node0 = node0.Successor() {
-		fmt.Println(node0.String())
-		if stop.Eq(node0) {
-			break
-		}
-	}
-}
-
-// Ring produces an array of all nodes in this node's ring.
-func (node *Node) Ring() []*Node {
-	nodes := make([]*Node, node.Bits())
-	for node0 := node; node0 != nil && !node.Eq(node0); node0 = node0.Successor() {
-		nodes = append(nodes, node0)
-	}
-	return nodes
+	fmt.Println("TODO");
 }
 
 // String produces canonical string representation of this node.
