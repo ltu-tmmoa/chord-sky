@@ -3,8 +3,8 @@ package chord
 import (
 	"fmt"
 	"math/big"
-	"net"
 	"math/rand"
+	"net"
 )
 
 // Node represents a potential member of a Chord ring.
@@ -163,7 +163,7 @@ func (node *Node) initFingerTable(node0 *Node) {
 // See Chord paper figure 6.
 func (node *Node) updateOthers() {
 	m := node.Bits()
-	for i := 1; i <= m; i++ {
+	for i := 2; i <= m; i++ {
 		var id ID
 		{
 			subtrahend := big.Int{}
@@ -182,7 +182,7 @@ func (node *Node) updateOthers() {
 // See Chord paper figure 6.
 func (node *Node) updateFingerTable(s *Node, i int) {
 	finger := node.finger(i)
-	fmt.Printf("  i %v: [%v, %v) contains %v", i, finger.Start(), finger.Node(), s.BigInt())
+	fmt.Printf("  {%v}  i %v: [%v, %v) contains %v", node, i, finger.Start(), finger.Node(), s.BigInt())
 	if idIntervalContainsIE(finger.Start(), finger.Node(), s) {
 		fmt.Printf(" == TRUE (%v)\n", s)
 		finger.node = s
@@ -221,7 +221,7 @@ func (node *Node) FixFingers() {
 
 // PrintRing outputs this node's ring to console.
 func (node *Node) PrintRing() {
-	fmt.Println("TODO");
+	fmt.Println("TODO")
 }
 
 // String produces canonical string representation of this node.
