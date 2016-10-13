@@ -8,19 +8,23 @@ import (
 func TestNodeJoin2(t *testing.T) {
 	nodes := prepareNodes(0, 1)
 
+	fmt.Print("\nTEST 2 START\n\n")
+
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
 
+	fmt.Print("\nTEST 2 STOP\n\n")
+
 	{
-		expectNodePredecessorID(t, nodes[0], 1)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[0])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
+		expectPredecessorID(1)
 		expectFingerNodeID(1, 1)
 		expectFingerNodeID(2, 0)
 		expectFingerNodeID(3, 0)
 	}
 	{
-		expectNodePredecessorID(t, nodes[1], 0)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[1])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[1])
+		expectPredecessorID(0)
 		expectFingerNodeID(1, 0)
 		expectFingerNodeID(2, 0)
 		expectFingerNodeID(3, 0)
@@ -39,22 +43,22 @@ func TestNodeJoin3(t *testing.T) {
 	fmt.Print("\nTEST 3 STOP\n\n")
 
 	{
-		expectNodePredecessorID(t, nodes[0], 3)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[0])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
+		expectPredecessorID(3)
 		expectFingerNodeID(1, 1)
 		expectFingerNodeID(2, 3)
 		expectFingerNodeID(3, 0)
 	}
 	{
-		expectNodePredecessorID(t, nodes[1], 0)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[1])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[1])
+		expectPredecessorID(0)
 		expectFingerNodeID(1, 3)
 		expectFingerNodeID(2, 3)
 		expectFingerNodeID(3, 0)
 	}
 	{
-		expectNodePredecessorID(t, nodes[2], 1)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[2])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[2])
+		expectPredecessorID(1)
 		expectFingerNodeID(1, 0)
 		expectFingerNodeID(2, 0)
 		expectFingerNodeID(3, 0)
@@ -75,29 +79,29 @@ func TestNodeJoin4(t *testing.T) {
 	fmt.Print("\nTEST 4 STOP\n\n")
 
 	{
-		expectNodePredecessorID(t, nodes[0], 6)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[0])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
+		expectPredecessorID(6)
 		expectFingerNodeID(1, 1)
 		expectFingerNodeID(2, 3)
 		expectFingerNodeID(3, 6)
 	}
 	{
-		expectNodePredecessorID(t, nodes[1], 0)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[1])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[1])
+		expectPredecessorID(0)
 		expectFingerNodeID(1, 3)
 		expectFingerNodeID(2, 3)
 		expectFingerNodeID(3, 6)
 	}
 	{
-		expectNodePredecessorID(t, nodes[2], 1)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[2])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[2])
+		expectPredecessorID(1)
 		expectFingerNodeID(1, 6)
 		expectFingerNodeID(2, 6)
 		expectFingerNodeID(3, 0)
 	}
 	{
-		expectNodePredecessorID(t, nodes[3], 3)
-		expectFingerNodeID := prepareNodeFingerTester(t, nodes[3])
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[3])
+		expectPredecessorID(3)
 		expectFingerNodeID(1, 0)
 		expectFingerNodeID(2, 0)
 		expectFingerNodeID(3, 3)
@@ -122,18 +126,18 @@ func TestNodeJoin(t *testing.T) {
 	//nodes[0].PrintRing()
 }
 
-func expectNodePredecessorID(t *testing.T, node *Node, predecessorID int64) {
-	if n := node.Predecessor(); !n.Eq(newHash64(predecessorID, M3)) {
-		t.Errorf("{%v}.predecessor expected to be %v, was %v", node, predecessorID, n)
+func prepareNodeFingerTests(t *testing.T, node *Node) (func(int64), func(int, int64)) {
+	expectPredecessorID := func (predecessorID int64) {
+		if n := node.Predecessor(); !n.Eq(newHash64(predecessorID, M3)) {
+			t.Errorf("{%v}.predecessor expected to be %v, was %v", node, predecessorID, n)
+		}
 	}
-}
-
-func prepareNodeFingerTester(t *testing.T, node *Node) func(int, int64) {
-	return func(finger int, nodeID int64) {
+	expectFingerNodeID := func(finger int, nodeID int64) {
 		if n := node.Finger(finger).Node(); !n.Eq(newHash64(nodeID, M3)) {
 			t.Errorf("{%v}.finger(%v).node expected to be %v, was %v.", node, finger, nodeID, n)
 		}
 	}
+	return expectPredecessorID, expectFingerNodeID
 }
 
 func prepareNodes(ids ...int64) []*Node {
