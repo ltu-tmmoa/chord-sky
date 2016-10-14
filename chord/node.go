@@ -172,7 +172,6 @@ func (node *Node) updateOthers() {
 			id = node.Diff(newHash(subtrahend, m))
 		}
 		predecessor := node.findPredecessor(id)
-		fmt.Printf("ID: %v, PRED: %v\n", id, predecessor)
 		predecessor.updateFingerTable(node, i)
 	}
 }
@@ -182,14 +181,10 @@ func (node *Node) updateOthers() {
 // See Chord paper figure 6.
 func (node *Node) updateFingerTable(s *Node, i int) {
 	finger := node.finger(i)
-	fmt.Printf("  {%v}  i %v: [%v, %v) contains %v", node, i, finger.Start(), finger.Node(), s.BigInt())
 	if idIntervalContainsIE(finger.Start(), finger.Node(), s) {
-		fmt.Printf(" == TRUE (%v)\n", s)
 		finger.node = s
 		predecessor := node.predecessor
 		predecessor.updateFingerTable(s, i)
-	} else {
-		fmt.Print(" == FALSE\n")
 	}
 }
 
