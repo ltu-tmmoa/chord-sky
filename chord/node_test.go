@@ -109,8 +109,10 @@ func TestNodeJoin4(t *testing.T) {
 	printNodes(nodes)
 }
 
-func TestNodeJoin(t *testing.T) {
+func TestNodeJoin8(t *testing.T) {
 	nodes := prepareNodes(0, 1, 2, 3, 4, 5, 6, 7)
+
+	fmt.Print("\nTEST 8 START\n\n")
 
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
@@ -121,9 +123,65 @@ func TestNodeJoin(t *testing.T) {
 	nodes[6].Join(nodes[3])
 	nodes[7].Join(nodes[3])
 
-	//printNodes(nodes)
+	fmt.Print("\nTEST 8 STOP\n\n")
 
-	//nodes[0].PrintRing()
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
+		expectPredecessorID(7)
+		expectFingerNodeID(1, 1)
+		expectFingerNodeID(2, 2)
+		expectFingerNodeID(3, 4)
+	}
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[1])
+		expectPredecessorID(0)
+		expectFingerNodeID(1, 2)
+		expectFingerNodeID(2, 3)
+		expectFingerNodeID(3, 5)
+	}
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[2])
+		expectPredecessorID(1)
+		expectFingerNodeID(1, 3)
+		expectFingerNodeID(2, 4)
+		expectFingerNodeID(3, 6)
+	}
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[3])
+		expectPredecessorID(2)
+		expectFingerNodeID(1, 4)
+		expectFingerNodeID(2, 5)
+		expectFingerNodeID(3, 7)
+	}
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[4])
+		expectPredecessorID(3)
+		expectFingerNodeID(1, 5)
+		expectFingerNodeID(2, 6)
+		expectFingerNodeID(3, 0)
+	}
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[5])
+		expectPredecessorID(4)
+		expectFingerNodeID(1, 6)
+		expectFingerNodeID(2, 7)
+		expectFingerNodeID(3, 1)
+	}
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[6])
+		expectPredecessorID(5)
+		expectFingerNodeID(1, 7)
+		expectFingerNodeID(2, 0)
+		expectFingerNodeID(3, 2)
+	}
+	{
+		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[7])
+		expectPredecessorID(6)
+		expectFingerNodeID(1, 0)
+		expectFingerNodeID(2, 1)
+		expectFingerNodeID(3, 3)
+	}
+	printNodes(nodes)
 }
 
 func prepareNodeFingerTests(t *testing.T, node *Node) (func(int64), func(int, int64)) {
