@@ -8,13 +8,12 @@ import (
 func TestNodeJoin2(t *testing.T) {
 	nodes := prepareNodes(0, 1)
 
-	fmt.Print("\nTEST 2 START\n\n")
-
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
 
-	fmt.Print("\nTEST 2 STOP\n\n")
-
+	for _, node := range nodes {
+		node.FixAllFingers()
+	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
 		expectPredecessorID(1)
@@ -34,14 +33,13 @@ func TestNodeJoin2(t *testing.T) {
 func TestNodeJoin3(t *testing.T) {
 	nodes := prepareNodes(0, 1, 3)
 
-	fmt.Print("\nTEST 3 START\n\n")
-
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
 	nodes[2].Join(nodes[1])
 
-	fmt.Print("\nTEST 3 STOP\n\n")
-
+	for _, node := range nodes {
+		node.FixAllFingers()
+	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
 		expectPredecessorID(3)
@@ -63,21 +61,19 @@ func TestNodeJoin3(t *testing.T) {
 		expectFingerNodeID(2, 0)
 		expectFingerNodeID(3, 0)
 	}
-	printNodes(nodes)
 }
 
 func TestNodeJoin4(t *testing.T) {
 	nodes := prepareNodes(0, 1, 3, 6)
-
-	fmt.Print("\nTEST 4 START\n\n")
 
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
 	nodes[2].Join(nodes[1])
 	nodes[3].Join(nodes[2])
 
-	fmt.Print("\nTEST 4 STOP\n\n")
-
+	for _, node := range nodes {
+		node.FixAllFingers()
+	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
 		expectPredecessorID(6)
@@ -106,13 +102,10 @@ func TestNodeJoin4(t *testing.T) {
 		expectFingerNodeID(2, 0)
 		expectFingerNodeID(3, 3)
 	}
-	printNodes(nodes)
 }
 
 func TestNodeJoin8(t *testing.T) {
 	nodes := prepareNodes(0, 1, 2, 3, 4, 5, 6, 7)
-
-	fmt.Print("\nTEST 8 START\n\n")
 
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
@@ -123,8 +116,9 @@ func TestNodeJoin8(t *testing.T) {
 	nodes[6].Join(nodes[3])
 	nodes[7].Join(nodes[3])
 
-	fmt.Print("\nTEST 8 STOP\n\n")
-
+	for _, node := range nodes {
+		node.FixAllFingers()
+	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
 		expectPredecessorID(7)
@@ -181,11 +175,10 @@ func TestNodeJoin8(t *testing.T) {
 		expectFingerNodeID(2, 1)
 		expectFingerNodeID(3, 3)
 	}
-	printNodes(nodes)
 }
 
 func prepareNodeFingerTests(t *testing.T, node *Node) (func(int64), func(int, int64)) {
-	expectPredecessorID := func (predecessorID int64) {
+	expectPredecessorID := func(predecessorID int64) {
 		if n := node.Predecessor(); !n.Eq(newHash64(predecessorID, M3)) {
 			t.Errorf("{%v}.predecessor expected to be %v, was %v", node, predecessorID, n)
 		}

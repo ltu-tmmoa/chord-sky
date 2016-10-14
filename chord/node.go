@@ -214,6 +214,13 @@ func (node *Node) FixFingers() {
 	finger.node = node.FindSuccessor(finger.Start())
 }
 
+// FixAllFingers refreshes all of this node's finger table entries.
+func (node *Node) FixAllFingers() {
+	for _, finger := range node.fingers {
+		finger.node = node.FindSuccessor(finger.Start())
+	}
+}
+
 // PrintRing outputs this node's ring to console.
 func (node *Node) PrintRing() {
 	fmt.Println("TODO")
