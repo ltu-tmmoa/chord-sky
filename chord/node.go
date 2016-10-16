@@ -223,7 +223,13 @@ func (node *Node) FixAllFingers() {
 
 // PrintRing outputs this node's ring to console.
 func (node *Node) PrintRing() {
-	fmt.Println("TODO")
+	fmt.Printf("Node %v ring: %v", node.String(), node.String())
+	successor := node.Successor()
+	for !node.Eq(successor) {
+		fmt.Printf(" => %v", successor.String())
+		successor = successor.Successor()
+	}
+	fmt.Println()
 }
 
 // String produces canonical string representation of this node.
