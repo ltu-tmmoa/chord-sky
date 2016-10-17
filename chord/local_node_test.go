@@ -177,6 +177,15 @@ func TestNodeJoin8(t *testing.T) {
 	}
 }
 
+func prepareNodes(ids ...int64) []*LocalNode {
+	nodes := make([]*LocalNode, len(ids))
+	for i, s := range ids {
+		nodes[i] = newLocalNode(stringAddr(fmt.Sprintf("%02d", s)), newHash64(s, M3))
+	}
+	return nodes
+}
+
+
 func prepareNodeFingerTests(t *testing.T, node *LocalNode) (func(int64), func(int, int64)) {
 	expectPredecessorID := func(predecessorID int64) {
 		if n := node.Predecessor(); !n.Eq(newHash64(predecessorID, M3)) {
@@ -189,12 +198,4 @@ func prepareNodeFingerTests(t *testing.T, node *LocalNode) (func(int64), func(in
 		}
 	}
 	return expectPredecessorID, expectFingerNodeID
-}
-
-func prepareNodes(ids ...int64) []*LocalNode {
-	nodes := make([]*LocalNode, len(ids))
-	for i, s := range ids {
-		nodes[i] = newNode(stringAddr(fmt.Sprintf("%02d", s)), newHash64(s, M3))
-	}
-	return nodes
 }

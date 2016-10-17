@@ -17,7 +17,7 @@ func TestFingerStart(t *testing.T) {
 	}
 	// See figure 3(a), Chord paper.
 	{
-		a := newNode(stringAddr("a"), newHash64(1, M3))
+		a := newLocalNode(stringAddr("a"), newHash64(1, M3))
 		expectNodeFingerStart(a, 1, 2)
 		expectNodeFingerStart(a, 2, 3)
 		expectNodeFingerStart(a, 3, 5)
@@ -34,17 +34,17 @@ func TestFingerInterval(t *testing.T) {
 	}
 	// See figure 3(b), Chord paper.
 	{
-		a := newNode(stringAddr("a"), newHash64(0, M3))
+		a := newLocalNode(stringAddr("a"), newHash64(0, M3))
 		expectNodeFingerInterval(a, 1, 1, 2)
 		expectNodeFingerInterval(a, 2, 2, 4)
 		expectNodeFingerInterval(a, 3, 4, 0)
 
-		b := newNode(stringAddr("b"), newHash64(1, M3))
+		b := newLocalNode(stringAddr("b"), newHash64(1, M3))
 		expectNodeFingerInterval(b, 1, 2, 3)
 		expectNodeFingerInterval(b, 2, 3, 5)
 		expectNodeFingerInterval(b, 3, 5, 1)
 
-		c := newNode(stringAddr("c"), newHash64(3, M3))
+		c := newLocalNode(stringAddr("c"), newHash64(3, M3))
 		expectNodeFingerInterval(c, 1, 4, 5)
 		expectNodeFingerInterval(c, 2, 5, 7)
 		expectNodeFingerInterval(c, 3, 7, 3)

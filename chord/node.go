@@ -38,23 +38,14 @@ type Node interface  {
 	// FindSuccessor asks this node to find successor of given ID.
 	FindSuccessor(id ID) Node
 
-	// Join makes this node join the ring of given other node.
-	//
-	// If given node is nil, this node will form its own ring.
-	Join(node0 Node)
+	// FindPredecessor asks this node to find a predecessor of given ID.
+	FindPredecessor(id ID) Node
 
-	// Stabilize attempts to fix any ring issues arising from joining or leaving Chord ring nodes.
-	//
-	// Recommended to be called periodically in order to ensure node data integrity.
-	Stabilize()
+	// SetSuccessor attempts to set this node's successor to given node.
+	SetSuccessor(successor Node)
 
-	// FixFingers refreshes this node's finger table entries in relation to Chord ring changes.
-	//
-	// Recommended to be called periodically in order to ensure finger table integrity.
-	FixFingers()
-
-	// FixAllFingers refreshes all of this node's finger table entries.
-	FixAllFingers()
+	// SetPredecessor attempts to set this node's predecessor to given node.
+	SetPredecessor(predecessor Node)
 
 	// String turns Node into its canonical string representation.
 	String() string
