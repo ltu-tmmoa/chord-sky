@@ -8,7 +8,7 @@ const (
 )
 
 func TestFingerStart(t *testing.T) {
-	expectNodeFingerStart := func(node *Node, finger int, expected int64) {
+	expectNodeFingerStart := func(node *LocalNode, finger int, expected int64) {
 		actual := node.Finger(finger).Start()
 
 		if actual.BigInt().Int64() != expected {
@@ -25,7 +25,7 @@ func TestFingerStart(t *testing.T) {
 }
 
 func TestFingerInterval(t *testing.T) {
-	expectNodeFingerInterval := func(node *Node, finger int, expectedStart, expectedStop int64) {
+	expectNodeFingerInterval := func(node *LocalNode, finger int, expectedStart, expectedStop int64) {
 		actualInterval := node.Finger(finger).Interval()
 
 		if actualInterval.Start().BigInt().Int64() != expectedStart || actualInterval.Stop().BigInt().Int64() != expectedStop {

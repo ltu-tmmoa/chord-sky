@@ -177,7 +177,7 @@ func TestNodeJoin8(t *testing.T) {
 	}
 }
 
-func prepareNodeFingerTests(t *testing.T, node *Node) (func(int64), func(int, int64)) {
+func prepareNodeFingerTests(t *testing.T, node *LocalNode) (func(int64), func(int, int64)) {
 	expectPredecessorID := func(predecessorID int64) {
 		if n := node.Predecessor(); !n.Eq(newHash64(predecessorID, M3)) {
 			t.Errorf("{%v}.predecessor expected to be %v, was %v", node, predecessorID, n)
@@ -191,21 +191,10 @@ func prepareNodeFingerTests(t *testing.T, node *Node) (func(int64), func(int, in
 	return expectPredecessorID, expectFingerNodeID
 }
 
-func prepareNodes(ids ...int64) []*Node {
-	nodes := make([]*Node, len(ids))
+func prepareNodes(ids ...int64) []*LocalNode {
+	nodes := make([]*LocalNode, len(ids))
 	for i, s := range ids {
 		nodes[i] = newNode(stringAddr(fmt.Sprintf("%02d", s)), newHash64(s, M3))
 	}
 	return nodes
-}
-
-func printNodes(nodes []*Node) {
-	for _, node := range nodes {
-		fmt.Printf("Node: %v\n", node)
-		for i := 1; i <= M3; i++ {
-			finger := node.finger(i)
-			fmt.Printf("  Finger: %v, %v, %v\n", i, finger.Interval(), finger.Node())
-		}
-		fmt.Printf("  Predecessor: %v\n", node.predecessor)
-	}
 }

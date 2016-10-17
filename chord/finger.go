@@ -8,7 +8,7 @@ import (
 // Finger represents a Chord node finger.
 type Finger struct {
 	interval FingerInterval
-	node     *Node
+	node     *LocalNode
 }
 
 func newFinger(id ID, i int) *Finger {
@@ -57,7 +57,7 @@ func (finger *Finger) Interval() *FingerInterval {
 }
 
 // Node yields Chord node associated with finger.
-func (finger *Finger) Node() *Node {
+func (finger *Finger) Node() *LocalNode {
 	return finger.node
 }
 

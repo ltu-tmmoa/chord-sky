@@ -8,15 +8,15 @@ import (
 )
 
 // Node represents a potential member of a Chord ring.
-type Node struct {
+type LocalNode struct {
 	addr        net.Addr
 	id          *Hash
 	fingers     []*Finger
-	predecessor *Node
+	predecessor *LocalNode
 }
 
-func newNode(addr net.Addr, id *Hash) *Node {
-	node := new(Node)
+func newNode(addr net.Addr, id *Hash) *LocalNode {
+	node := new(LocalNode)
 	node.addr = addr
 	node.id = id
 
@@ -30,27 +30,27 @@ func newNode(addr net.Addr, id *Hash) *Node {
 }
 
 // BigInt returns node identifier as a big.Int.
-func (node *Node) BigInt() *big.Int {
+func (node *LocalNode) BigInt() *big.Int {
 	return node.id.BigInt()
 }
 
 // Bits returns amount of significant bits in node identifier.
-func (node *Node) Bits() int {
+func (node *LocalNode) Bits() int {
 	return node.id.Bits()
 }
 
 // Cmp compares this node's identifier to given ID.
-func (node *Node) Cmp(other ID) int {
+func (node *LocalNode) Cmp(other ID) int {
 	return node.id.Cmp(other)
 }
 
 // Diff calculates the difference between this node's identifier and given ID.
-func (node *Node) Diff(other ID) ID {
+func (node *LocalNode) Diff(other ID) ID {
 	return node.id.Diff(other)
 }
 
 // Eq determines if this node's identifier and given ID are equal.
-func (node *Node) Eq(other ID) bool {
+func (node *LocalNode) Eq(other ID) bool {
 	return node.id.Eq(other)
 }
 
@@ -58,29 +58,29 @@ func (node *Node) Eq(other ID) bool {
 //
 // The result is only defined for i in [1,M], where M is the amount of bits set
 // at node ring creation.
-func (node *Node) Finger(i int) *Finger {
+func (node *LocalNode) Finger(i int) *Finger {
 	if 1 > i || i > node.id.bits {
 		panic(fmt.Sprintf("%d not in [1,%d]", i, node.id.bits))
 	}
 	return node.finger(i)
 }
 
-func (node *Node) finger(i int) *Finger {
+func (node *LocalNode) finger(i int) *Finger {
 	return node.fingers[i-1]
 }
 
 // Successor yields the next node in this node's ring.
-func (node *Node) Successor() *Node {
+func (node *LocalNode) Successor() *LocalNode {
 	return node.finger(1).node
 }
 
 // Predecessor yields the previous node in this node's ring.
-func (node *Node) Predecessor() *Node {
+func (node *LocalNode) Predecessor() *LocalNode {
 	return node.predecessor
 }
 
 // FindSuccessor asks this node to find successor of given ID.
-func (node *Node) FindSuccessor(id ID) *Node {
+func (node *LocalNode) FindSuccessor(id ID) *LocalNode {
 	node0 := node.findPredecessor(id)
 	return node0.Successor()
 }
@@ -88,7 +88,7 @@ func (node *Node) FindSuccessor(id ID) *Node {
 // Asks node to find id's predecessor.
 //
 // See Chord paper figure 4.
-func (node *Node) findPredecessor(id ID) *Node {
+func (node *LocalNode) findPredecessor(id ID) *LocalNode {
 	node0 := node
 	for !idIntervalContainsEI(node0, node0.Successor(), id) {
 		node0 = node0.closestPrecedingFinger(id)
@@ -99,7 +99,7 @@ func (node *Node) findPredecessor(id ID) *Node {
 // Returns closest finger preceding ID.
 //
 // See Chord paper figure 4.
-func (node *Node) closestPrecedingFinger(id ID) *Node {
+func (node *LocalNode) closestPrecedingFinger(id ID) *LocalNode {
 	for i := node.Bits(); i > 0; i-- {
 		if f := node.finger(i).node; idIntervalContainsEE(node, id, f) {
 			return f
@@ -111,7 +111,7 @@ func (node *Node) closestPrecedingFinger(id ID) *Node {
 // Join makes this node join the ring of given other node.
 //
 // If given node is nil, this node will form its own ring.
-func (node *Node) Join(node0 *Node) {
+func (node *LocalNode) Join(node0 *LocalNode) {
 	if node0 != nil {
 		if node.Bits() != node0.Bits() {
 			node.id = hash(node.addr, node0.Bits())
@@ -132,7 +132,7 @@ func (node *Node) Join(node0 *Node) {
 // the network.
 //
 // See Chord paper figure 6.
-func (node *Node) initFingerTable(node0 *Node) {
+func (node *LocalNode) initFingerTable(node0 *LocalNode) {
 	// Add this node to node0 node's ring.
 	{
 		successor := node0.FindSuccessor(node.finger(1).Start())
@@ -161,7 +161,7 @@ func (node *Node) initFingerTable(node0 *Node) {
 // Update all nodes whose finger tables should refer to node.
 //
 // See Chord paper figure 6.
-func (node *Node) updateOthers() {
+func (node *LocalNode) updateOthers() {
 	m := node.Bits()
 	for i := 2; i <= m; i++ {
 		var id ID
@@ -179,7 +179,7 @@ func (node *Node) updateOthers() {
 // If s is the i:th finger of node, update node's finger table with s.
 //
 // See Chord paper figure 6.
-func (node *Node) updateFingerTable(s *Node, i int) {
+func (node *LocalNode) updateFingerTable(s *LocalNode, i int) {
 	finger := node.finger(i)
 	if idIntervalContainsIE(finger.Start(), finger.Node(), s) {
 		finger.node = s
@@ -191,7 +191,7 @@ func (node *Node) updateFingerTable(s *Node, i int) {
 // Stabilize attempts to fix any ring issues arising from joining or leaving Chord ring nodes.
 //
 // Recommended to be called periodically in order to ensure node data integrity.
-func (node *Node) Stabilize() {
+func (node *LocalNode) Stabilize() {
 	x := node.Successor().Predecessor()
 	if idIntervalContainsEE(node, node.Successor(), x) {
 		node.finger(1).node = x
@@ -199,7 +199,7 @@ func (node *Node) Stabilize() {
 	node.Successor().notify(node)
 }
 
-func (node *Node) notify(node0 *Node) {
+func (node *LocalNode) notify(node0 *LocalNode) {
 	if node.predecessor == nil || idIntervalContainsEE(node.predecessor, node, node0) {
 		node.predecessor = node0
 	}
@@ -208,21 +208,21 @@ func (node *Node) notify(node0 *Node) {
 // FixFingers refreshes this node's finger table entries in relation to Chord ring changes.
 //
 // Recommended to be called periodically in order to ensure finger table integrity.
-func (node *Node) FixFingers() {
+func (node *LocalNode) FixFingers() {
 	i := rand.Int() % len(node.fingers)
 	finger := node.fingers[i]
 	finger.node = node.FindSuccessor(finger.Start())
 }
 
 // FixAllFingers refreshes all of this node's finger table entries.
-func (node *Node) FixAllFingers() {
+func (node *LocalNode) FixAllFingers() {
 	for _, finger := range node.fingers {
 		finger.node = node.FindSuccessor(finger.Start())
 	}
 }
 
 // PrintRing outputs this node's ring to console.
-func (node *Node) PrintRing() {
+func (node *LocalNode) PrintRing() {
 	fmt.Printf("Node %v ring: %v", node.String(), node.String())
 	successor := node.Successor()
 	for !node.Eq(successor) {
@@ -233,6 +233,6 @@ func (node *Node) PrintRing() {
 }
 
 // String produces canonical string representation of this node.
-func (node *Node) String() string {
+func (node *LocalNode) String() string {
 	return node.id.String()
 }
