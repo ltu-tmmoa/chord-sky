@@ -30,22 +30,22 @@ type Node interface  {
 	Finger(i int) *Finger
 
 	// Successor yields the next node in this node's ring.
-	Successor() Node
+	Successor() (Node, error)
 
 	// Predecessor yields the previous node in this node's ring.
-	Predecessor() Node
+	Predecessor() (Node, error)
 
 	// FindSuccessor asks this node to find successor of given ID.
-	FindSuccessor(id ID) Node
+	FindSuccessor(id ID) (Node, error)
 
 	// FindPredecessor asks this node to find a predecessor of given ID.
-	FindPredecessor(id ID) Node
+	FindPredecessor(id ID) (Node, error)
 
 	// SetSuccessor attempts to set this node's successor to given node.
-	SetSuccessor(successor Node)
+	SetSuccessor(successor Node) error
 
 	// SetPredecessor attempts to set this node's predecessor to given node.
-	SetPredecessor(predecessor Node)
+	SetPredecessor(predecessor Node) error
 
 	// String turns Node into its canonical string representation.
 	String() string
