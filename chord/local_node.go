@@ -22,7 +22,7 @@ func newLocalNode(addr net.Addr, id *Hash) *LocalNode {
 
 	fingers := make([]*Finger, id.bits)
 	for i := range fingers {
-		fingers[i] = newFinger(id, i+1)
+		fingers[i] = newFinger(id, i + 1)
 	}
 	node.fingers = fingers
 	node.predecessor = nil
@@ -66,12 +66,12 @@ func (node *LocalNode) Finger(i int) *Finger {
 }
 
 func (node *LocalNode) finger(i int) *Finger {
-	return node.fingers[i-1]
+	return node.fingers[i - 1]
 }
 
 // Successor yields the next node in this node's ring.
 func (node *LocalNode) Successor() (Node, error) {
-	return node.finger(1).node, nil
+	return node.finger(1).Node()
 }
 
 // Predecessor yields the previous node in this node's ring.
@@ -110,7 +110,10 @@ func findPredecessor(n Node, id ID) (Node, error) {
 		if idIntervalContainsEI(n0, successor, id) {
 			return n0, nil
 		}
-		n0 = closestPrecedingFinger(n0, id)
+		n0, err = closestPrecedingFinger(n0, id)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return n0, nil
 }
@@ -118,18 +121,22 @@ func findPredecessor(n Node, id ID) (Node, error) {
 // Returns closest finger preceding ID.
 //
 // See Chord paper figure 4.
-func closestPrecedingFinger(n Node, id ID) Node {
+func closestPrecedingFinger(n Node, id ID) (Node, error) {
 	for i := n.Bits(); i > 0; i-- {
-		if f := n.Finger(i).node; idIntervalContainsEE(n, id, f) {
-			return f
+		f, err := n.Finger(i).Node()
+		if err != nil {
+			return nil, err
+		}
+		if idIntervalContainsEE(n, id, f) {
+			return f, nil
 		}
 	}
-	return n
+	return n, nil
 }
 
 // SetSuccessor attempts to set this node's successor to given node.
 func (node *LocalNode) SetSuccessor(successor Node) error {
-	node.finger(1).node = successor
+	node.finger(1).SetNode(successor)
 	return nil
 }
 
@@ -153,7 +160,7 @@ func (node *LocalNode) Join(node0 Node) {
 	} else {
 		m := node.Bits()
 		for i := 1; i <= m; i++ {
-			node.finger(i).node = node
+			node.finger(i).SetNode(node)
 		}
 		node.predecessor = node
 	}
@@ -189,8 +196,12 @@ func updateOthers(n Node) error {
 // See Chord paper figure 6.
 func updateFingerTable(n, s Node, i int) error {
 	finger := n.Finger(i)
-	if idIntervalContainsIE(finger.Start(), finger.Node(), s) {
-		finger.node = s
+	fingerNode, err := finger.Node()
+	if err != nil {
+		return err
+	}
+	if idIntervalContainsIE(finger.Start(), fingerNode, s) {
+		finger.SetNode(s)
 		predecessor, err := n.Predecessor()
 		if err != nil {
 			return err
@@ -236,14 +247,20 @@ func (node *LocalNode) initFingerTable(node0 Node) error {
 		for i := 1; i < m; i++ {
 			this := node.finger(i)
 			next := node.finger(i + 1)
-			if idIntervalContainsIE(node, this.Node(), next.Start()) {
-				next.node = this.Node()
-			} else {
-				next.node, err = node0.FindSuccessor(next.Start())
-				if err != nil {
-					return err
-				}
+			thisNode, err := this.Node()
+			if err != nil {
+				return err
 			}
+			var nextNode Node
+			if idIntervalContainsIE(node, thisNode, next.Start()) {
+				nextNode, err = this.Node()
+			} else {
+				nextNode, err = node0.FindSuccessor(next.Start())
+			}
+			if err != nil {
+				return err
+			}
+			next.SetNode(nextNode)
 		}
 	}
 	return nil
@@ -253,16 +270,24 @@ func (node *LocalNode) initFingerTable(node0 Node) error {
 //
 // Recommended to be called periodically in order to ensure node data integrity.
 func (node *LocalNode) Stabilize() error {
-	x, err := node.finger(1).node.Predecessor()
+	successor, err := node.Successor()
 	if err != nil {
 		return err
 	}
-	if idIntervalContainsEE(node, node.finger(1).node, x) {
+	x, err := successor.Predecessor()
+	if err != nil {
+		return err
+	}
+	if idIntervalContainsEE(node, successor, x) {
 		if err = node.SetSuccessor(x); err != nil {
 			return err
 		}
 	}
-	return notify(node.finger(1).node, node)
+	successor, err = node.Successor()
+	if err != nil {
+		return err
+	}
+	return notify(successor, node)
 }
 
 func notify(n, n0 Node) error {
@@ -280,22 +305,21 @@ func notify(n, n0 Node) error {
 //
 // Recommended to be called periodically in order to ensure finger table integrity.
 func (node *LocalNode) FixRandomFinger() error {
-	var err error
-
 	i := rand.Int() % len(node.fingers)
 	finger := node.fingers[i]
-	finger.node, err = node.FindSuccessor(finger.Start())
+	fingerNode, err := node.FindSuccessor(finger.Start())
+	finger.SetNode(fingerNode)
 	return err
 }
 
 // FixAllFingers refreshes all of this node's finger table entries.
 func (node *LocalNode) FixAllFingers() error {
-	var err error
 	for _, finger := range node.fingers {
-		finger.node, err = node.FindSuccessor(finger.Start())
+		fingerNode, err := node.FindSuccessor(finger.Start())
 		if err != nil {
 			return err
 		}
+		finger.SetNode(fingerNode)
 	}
 	return nil
 }
