@@ -8,7 +8,8 @@ import (
 // Finger represents a Chord node finger.
 type Finger struct {
 	interval FingerInterval
-	node     func() (Node, error)
+	lazyNode func() (Node, error)
+	isLazy bool
 }
 
 func newFinger(id ID, i int) *Finger {
@@ -17,7 +18,8 @@ func newFinger(id ID, i int) *Finger {
 		start: fingerStart(id, i),
 		stop:  fingerStart(id, i+1),
 	}
-	finger.node = nil
+	finger.lazyNode = nil
+	finger.isLazy = false
 	return finger
 }
 
@@ -58,19 +60,21 @@ func (finger *Finger) Interval() *FingerInterval {
 
 // Node yields Chord node associated with finger.
 func (finger *Finger) Node() (Node, error) {
-	return finger.node()
+	return finger.lazyNode()
 }
 
 // SetNode sets known node as finger node.
 func (finger *Finger) SetNode(node Node) {
-	finger.node = func() (Node, error) {
+	finger.lazyNode = func() (Node, error) {
 		return node, nil
 	}
+	finger.isLazy = false
 }
 
 // SetsNodeLazy sets function used to resolve finger node when requested.
 func (finger *Finger) SetNodeLazy(node func() (Node, error)) {
-	finger.node = node
+	finger.lazyNode = node
+	finger.isLazy = true
 }
 
 // String produces a canonical string representation of this Finger.
@@ -80,7 +84,7 @@ func (finger *Finger) String() string {
 	if err != nil {
 		node = err.Error()
 	}
-	return fmt.Sprintf("%v (%v)", finger.interval.String(), node)
+	return fmt.Sprintf("Finger{ interval: %v, node: %v, isLazy: %v }", finger.interval.String(), node, finger.isLazy)
 }
 
 // FingerInterval holds two ID:s, representing a [start, stop) range of ID:s.
