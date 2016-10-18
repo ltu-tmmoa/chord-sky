@@ -1,9 +1,9 @@
 package main
 
 import (
-    "fmt"
+    "github.com/ltu-tmmoa/chord-sky/log"
 )
 
 func main() {
-    fmt.Println("Hello!")
+    log.Logger.Println("Chord Sky")
 }
