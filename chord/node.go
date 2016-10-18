@@ -2,9 +2,13 @@ package chord
 
 import (
 	"math/big"
+	"net"
 )
 
 type Node interface  {
+	// Addr provides node network address.
+	Addr() net.Addr
+
 	// BigInt turns Node ID into big.Int representation.
 	BigInt() *big.Int
 

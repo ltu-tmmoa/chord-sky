@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"math/rand"
 	"net"
+	"crypto/sha1"
 )
 
 // Node represents a potential member of a Chord ring.
@@ -13,6 +14,12 @@ type LocalNode struct {
 	id          *Hash
 	fingers     []*Finger
 	predecessor Node
+}
+
+// NewLocalNode creates a new local node from given address, which ought to be the application's public-facing IP
+// address.
+func NewLocalNode(addr net.Addr) *LocalNode {
+	return newLocalNode(addr, hash(addr, sha1.Size * 8))
 }
 
 func newLocalNode(addr net.Addr, id *Hash) *LocalNode {
@@ -27,6 +34,11 @@ func newLocalNode(addr net.Addr, id *Hash) *LocalNode {
 	node.fingers = fingers
 	node.predecessor = nil
 	return node
+}
+
+// Addr provides node network address.
+func (node *LocalNode) Addr() net.Addr {
+	return node.addr
 }
 
 // BigInt returns node identifier as a big.Int.

@@ -1,13 +1,13 @@
 package log
 
 import (
-	golog "log"
+	"log"
 	"os"
 )
 
 // Logger is the default application logger.
-var Logger *golog.Logger
+var Logger *log.Logger
 
 func init() {
-	Logger = golog.New(os.Stdout, "chord-sky ", golog.Ltime | golog.Ldate | golog.Lshortfile | golog.LUTC)
+	Logger = log.New(os.Stdout, "chord-sky ", log.Ltime | log.Ldate | log.Lshortfile | log.LUTC)
 }
