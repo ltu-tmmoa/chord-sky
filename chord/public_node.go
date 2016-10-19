@@ -27,11 +27,7 @@ func (node *PublicNode) GetFingerNode(i *int, reply *net.IPAddr) error {
 	node.mutex.RLock()
 	defer node.mutex.RUnlock()
 
-	fingerNode, err := node.node.Finger(*i).Node()
-	if err != nil {
-		return err
-	}
-	*reply = *fingerNode.IPAddr()
+	*reply = *node.node.Finger(*i).Node().IPAddr()
 	return nil
 }
 

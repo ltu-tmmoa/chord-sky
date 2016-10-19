@@ -3,13 +3,13 @@ package chord
 import (
 	"fmt"
 	"math/big"
+	"net"
 )
 
 // Finger represents a Chord node finger.
 type Finger struct {
 	interval FingerInterval
-	lazyNode func() (Node, error)
-	isLazy   bool
+	lazyNode func() Node
 }
 
 func newFinger(id ID, i int) *Finger {
@@ -19,7 +19,6 @@ func newFinger(id ID, i int) *Finger {
 		stop:  fingerStart(id, i+1),
 	}
 	finger.lazyNode = nil
-	finger.isLazy = false
 	return finger
 }
 
@@ -59,32 +58,27 @@ func (finger *Finger) Interval() *FingerInterval {
 }
 
 // Node yields Chord node associated with finger.
-func (finger *Finger) Node() (Node, error) {
+func (finger *Finger) Node() Node {
 	return finger.lazyNode()
 }
 
 // SetNode sets known node as finger node.
 func (finger *Finger) SetNode(node Node) {
-	finger.lazyNode = func() (Node, error) {
-		return node, nil
+	finger.lazyNode = func() Node {
+		return node
 	}
-	finger.isLazy = false
 }
 
-// SetNodeLazy sets function used to resolve finger node when requested.
-func (finger *Finger) SetNodeLazy(node func() (Node, error)) {
-	finger.lazyNode = node
-	finger.isLazy = true
+// SetNodeFromIPAddress sets function used to resolve finger node when requested.
+func (finger *Finger) SetNodeFromIPAddress(ipAddr *net.IPAddr) {
+	finger.lazyNode =  func() Node {
+		return NewRemoteNode(ipAddr)
+	}
 }
 
 // String produces a canonical string representation of this Finger.
 func (finger *Finger) String() string {
-	var node interface{}
-	node, err := finger.Node()
-	if err != nil {
-		node = err.Error()
-	}
-	return fmt.Sprintf("Finger{ interval: %v, node: %v, isLazy: %v }", finger.interval.String(), node, finger.isLazy)
+	return fmt.Sprintf("Finger{ interval: %v, node: %v }", finger.interval.String(), finger.Node())
 }
 
 // FingerInterval holds two ID:s, representing a [start, stop) range of ID:s.

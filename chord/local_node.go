@@ -87,7 +87,7 @@ func (node *LocalNode) finger(i int) *Finger {
 
 // Successor yields the next node in this node's ring.
 func (node *LocalNode) Successor() (Node, error) {
-	return node.finger(1).Node()
+	return node.finger(1).Node(), nil
 }
 
 // Predecessor yields the previous node in this node's ring.
@@ -138,11 +138,7 @@ func findPredecessor(n Node, id ID) (Node, error) {
 // See Chord paper figure 4.
 func closestPrecedingFinger(n Node, id ID) (Node, error) {
 	for i := n.Bits(); i > 0; i-- {
-		f, err := n.Finger(i).Node()
-		if err != nil {
-			return nil, err
-		}
-		if idIntervalContainsEE(n, id, f) {
+		if f := n.Finger(i).Node(); idIntervalContainsEE(n, id, f) {
 			return f, nil
 		}
 	}
@@ -211,11 +207,7 @@ func updateOthers(n Node) error {
 // See Chord paper figure 6.
 func updateFingerTable(n, s Node, i int) error {
 	finger := n.Finger(i)
-	fingerNode, err := finger.Node()
-	if err != nil {
-		return err
-	}
-	if idIntervalContainsIE(finger.Start(), fingerNode, s) {
+	if idIntervalContainsIE(finger.Start(), finger.Node(), s) {
 		finger.SetNode(s)
 		predecessor, err := n.Predecessor()
 		if err != nil {
@@ -262,13 +254,9 @@ func (node *LocalNode) initFingerTable(node0 Node) error {
 		for i := 1; i < m; i++ {
 			this := node.finger(i)
 			next := node.finger(i + 1)
-			thisNode, err := this.Node()
-			if err != nil {
-				return err
-			}
 			var nextNode Node
-			if idIntervalContainsIE(node, thisNode, next.Start()) {
-				nextNode, err = this.Node()
+			if idIntervalContainsIE(node, this.Node(), next.Start()) {
+				nextNode = this.Node()
 			} else {
 				nextNode, err = node0.FindSuccessor(next.Start())
 			}
