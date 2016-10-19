@@ -5,6 +5,7 @@ import (
 	"net"
 )
 
+// Node represents some Chord node, available either locally or remotely.
 type Node interface  {
 	// Addr provides node network address.
 	Addr() net.Addr

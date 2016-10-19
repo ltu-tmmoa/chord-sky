@@ -1,14 +1,14 @@
 package chord
 
 import (
+	"crypto/sha1"
 	"fmt"
 	"math/big"
 	"math/rand"
 	"net"
-	"crypto/sha1"
 )
 
-// Node represents a potential member of a Chord ring.
+// LocalNode represents a potential member of a Chord ring.
 type LocalNode struct {
 	addr        net.Addr
 	id          *Hash
@@ -78,7 +78,7 @@ func (node *LocalNode) Finger(i int) *Finger {
 }
 
 func (node *LocalNode) finger(i int) *Finger {
-	return node.fingers[i - 1]
+	return node.fingers[i-1]
 }
 
 // Successor yields the next node in this node's ring.
@@ -95,11 +95,11 @@ func (node *LocalNode) Predecessor() (Node, error) {
 //
 // See Chord paper figure 4.
 func (node *LocalNode) FindSuccessor(id ID) (Node, error) {
-	if node0, err := node.FindPredecessor(id); err != nil {
+	node0, err := node.FindPredecessor(id)
+	if err != nil {
 		return nil, err
-	} else {
-		return node0.Successor()
 	}
+	return node0.Successor()
 }
 
 // FindPredecessor asks node to find id's predecessor.
@@ -127,7 +127,6 @@ func findPredecessor(n Node, id ID) (Node, error) {
 			return nil, err
 		}
 	}
-	return n0, nil
 }
 
 // Returns closest finger preceding ID.
@@ -188,7 +187,7 @@ func updateOthers(n Node) error {
 		{
 			subtrahend := big.Int{}
 			subtrahend.SetInt64(2)
-			subtrahend.Exp(&subtrahend, big.NewInt(int64(i - 1)), nil)
+			subtrahend.Exp(&subtrahend, big.NewInt(int64(i-1)), nil)
 			id = n.Diff(newHash(subtrahend, m))
 		}
 		predecessor, err := n.FindPredecessor(id)

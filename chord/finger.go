@@ -9,7 +9,7 @@ import (
 type Finger struct {
 	interval FingerInterval
 	lazyNode func() (Node, error)
-	isLazy bool
+	isLazy   bool
 }
 
 func newFinger(id ID, i int) *Finger {
@@ -71,7 +71,7 @@ func (finger *Finger) SetNode(node Node) {
 	finger.isLazy = false
 }
 
-// SetsNodeLazy sets function used to resolve finger node when requested.
+// SetNodeLazy sets function used to resolve finger node when requested.
 func (finger *Finger) SetNodeLazy(node func() (Node, error)) {
 	finger.lazyNode = node
 	finger.isLazy = true
