@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"net/rpc"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/ltu-tmmoa/chord-sky/chord"
 	"github.com/ltu-tmmoa/chord-sky/log"
 	cnet "github.com/ltu-tmmoa/chord-sky/net"
+	chttp "github.com/ltu-tmmoa/chord-sky/net/http"
 )
 
 var peer string
@@ -79,18 +79,11 @@ func main() {
 
 	// Expose local node as HTTP RPC service.
 	{
-		publicNode := chord.NewPublicNode(localNode, localNodeMutex)
+		httpNode := chttp.NewNode(localNode, localNodeMutex)
+		http.Handle("/", httpNode)
 
-		rpc.Register(publicNode)
-		rpc.HandleHTTP()
-
-		tcpAddr := fmt.Sprintf("%s:8080", localNode.IPAddr().String())
-		listener, err := net.Listen("tcp", tcpAddr)
-		if err != nil {
-			log.Logger.Fatalln(err)
-		}
-		log.Logger.Println("Listening on", tcpAddr, "...")
-
-		http.Serve(listener, nil)
+		localAddr := fmt.Sprintf("%s:8080", localNode.IPAddr().String())
+		log.Logger.Println("Listening on", localAddr, "...")
+		log.Logger.Fatal(http.ListenAndServe(localAddr, nil))
 	}
 }

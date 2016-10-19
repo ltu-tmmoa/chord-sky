@@ -24,6 +24,11 @@ func newHash(value big.Int, bits int) *Hash {
 	return hash
 }
 
+// NewHash creates hash from given object a.
+func NewHash(a interface{}) *Hash {
+	return hash(a, HashBitsMax)
+}
+
 func hash(a interface{}, bits int) *Hash {
 	// ceil = 2^bits
 	ceil := big.Int{}
