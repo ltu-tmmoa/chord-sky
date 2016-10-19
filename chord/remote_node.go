@@ -7,8 +7,10 @@ import (
 
 // RemoteNode represents some Chord node available remotely.
 type RemoteNode struct {
-	ipAddr net.IPAddr
-	id     Hash
+	ipAddr 		net.IPAddr
+	id		Hash
+	fingers     	[]*Finger
+	predecessor 	Node
 }
 
 // NewRemoteNode creates a new remote node from given address.
@@ -25,12 +27,12 @@ func newRemoteNode(ipAddr *net.IPAddr, id *Hash) *RemoteNode {
 
 // BigInt turns Node ID into big.Int representation.
 func (node *RemoteNode) BigInt() *big.Int {
-	return nil
+	return node.id.BigInt()
 }
 
 // Bits returns amount of significant bits in Node ID.
 func (node *RemoteNode) Bits() int {
-	return -1
+	return node.id.Bits()
 }
 
 // Cmp compares ID of this Node with given ID.
@@ -38,22 +40,22 @@ func (node *RemoteNode) Bits() int {
 // Returns -1, 0 or 1 depending on if given other ID is lesser than, equal
 // to, or greater than this Node's ID.
 func (node *RemoteNode) Cmp(other ID) int {
-	return 0
+	return node.id.Cmp(other)
 }
 
 // Diff calculates the difference between this Node's ID and given other ID.
 func (node *RemoteNode) Diff(other ID) ID {
-	return nil
+	return node.id.Diff(other)
 }
 
 // Eq determines if this Node's ID and given other ID are equal.
 func (node *RemoteNode) Eq(other ID) bool {
-	return false
+	return node.id.Eq(other)
 }
 
 // Hash turns this Node's ID into Hash representation.
 func (node *RemoteNode) Hash() Hash {
-	return node.id
+	return node.id.Hash()
 }
 
 // IPAddr provides node network address.
