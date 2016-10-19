@@ -59,19 +59,21 @@ func main() {
 
 	// Schedule recurring operations.
 	go func() {
+		time.Sleep(10 * time.Second)
 		for {
+			func() {
+				// TODO: Heartbeat?
+
+				localNodeMutex.Lock()
+				defer localNodeMutex.Unlock()
+
+				log.Logger.Println("Stabilizing ...")
+				localNode.Stabilize()
+
+				log.Logger.Println("Fixing random finger table entry ...")
+				localNode.FixRandomFinger()
+			}()
 			time.Sleep(30 * time.Second)
-
-			// TODO: Heartbeat?
-
-			localNodeMutex.Lock()
-			defer localNodeMutex.Unlock()
-
-			log.Logger.Println("Stabilizing ...")
-			localNode.Stabilize()
-
-			log.Logger.Println("Fixing random finger table entry ...")
-			localNode.FixRandomFinger()
 		}
 	}()
 
@@ -83,12 +85,12 @@ func main() {
 		rpc.HandleHTTP()
 
 		tcpAddr := fmt.Sprintf("%s:8080", localNode.IPAddr().String())
-		listner, err := net.Listen("tcp", tcpAddr)
+		listener, err := net.Listen("tcp", tcpAddr)
 		if err != nil {
 			log.Logger.Fatalln(err)
 		}
 		log.Logger.Println("Listening on", tcpAddr, "...")
 
-		http.Serve(listner, nil)
+		http.Serve(listener, nil)
 	}
 }
