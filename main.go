@@ -52,10 +52,12 @@ func main() {
 		rpc.Register(publicNode)
 		rpc.HandleHTTP()
 
-		listner, err := net.Listen("tcp", fmt.Sprintf("%s:8080", localNode.IPAddr().String()))
+		tcpAddr := fmt.Sprintf("%s:8080", localNode.IPAddr().String())
+		listner, err := net.Listen("tcp", tcpAddr)
 		if err != nil {
 			log.Logger.Fatalln(err)
 		}
+		log.Logger.Println("Listening on:", tcpAddr)
 
 		http.Serve(listner, nil)
 	}
