@@ -66,6 +66,11 @@ func (node *LocalNode) Eq(other ID) bool {
 	return node.id.Eq(other)
 }
 
+// Hash turns ID into Hash representation.
+func (node *LocalNode) Hash() Hash {
+	return node.id.Hash()
+}
+
 // Finger resolves Chord node at given finger table offset i.
 //
 // The result is only defined for i in [1,M], where M is the amount of bits set

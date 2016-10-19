@@ -28,6 +28,9 @@ type Node interface  {
 	// Eq determines if this Node's ID and given other ID are equal.
 	Eq(other ID) bool
 
+	// Hash turns this Node's ID into Hash representation.
+	Hash() Hash
+
 	// Finger resolves Chord node at given finger table offset i.
 	//
 	// The result is only defined for i in [1,M], where M is the amount of bits set

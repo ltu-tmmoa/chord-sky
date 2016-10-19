@@ -22,6 +22,9 @@ type ID interface {
 	// Eq determines if this and given other ID are equal.
 	Eq(other ID) bool
 
+	// Hash turns ID into Hash representation.
+	Hash() Hash
+
 	// String turns ID into its canonical string representation.
 	String() string
 }

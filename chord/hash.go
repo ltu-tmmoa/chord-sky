@@ -73,6 +73,11 @@ func (hash *Hash) Eq(other ID) bool {
 	return hash.Cmp(other) == 0
 }
 
+// Hash turns ID into Hash representation.
+func (hash *Hash) Hash() Hash {
+	return *hash
+}
+
 // String produces a canonical string representation of this Hash.
 func (hash *Hash) String() string {
 	return hash.value.String()
