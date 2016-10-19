@@ -11,13 +11,13 @@ import (
 func main() {
 	log.Logger.Println("Chord Sky")
 
-	localAddr, err := net.GetLocalAddr()
+	localIPAddr, err := net.GetLocalIPAddr()
 	if err != nil {
 		log.Logger.Fatalln(err)
 	}
-	localNode := chord.NewLocalNode(localAddr)
+	localNode := chord.NewLocalNode(localIPAddr)
 
-	log.Logger.Println("Local address:", localNode.Addr())
+	log.Logger.Println("Local address:", localNode.IPAddr())
 
 	go func() {
 		for {

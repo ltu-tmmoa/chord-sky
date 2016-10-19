@@ -5,8 +5,8 @@ import (
 	"net"
 )
 
-// GetLocalAddr returns a local non-loopback network address.
-func GetLocalAddr() (net.Addr, error) {
+// GetLocalIPAddr returns a local non-loopback network address.
+func GetLocalIPAddr() (*net.IPAddr, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return nil, err
@@ -14,7 +14,7 @@ func GetLocalAddr() (net.Addr, error) {
 	for _, addr := range addrs {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
-				return addr, nil
+				return addr.(*net.IPAddr), nil
 			}
 		}
 	}

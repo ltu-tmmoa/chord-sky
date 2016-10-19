@@ -6,10 +6,7 @@ import (
 )
 
 // Node represents some Chord node, available either locally or remotely.
-type Node interface  {
-	// Addr provides node network address.
-	Addr() net.Addr
-
+type Node interface {
 	// BigInt turns Node ID into big.Int representation.
 	BigInt() *big.Int
 
@@ -30,6 +27,9 @@ type Node interface  {
 
 	// Hash turns this Node's ID into Hash representation.
 	Hash() Hash
+
+	// IPAddr provides node network address.
+	IPAddr() *net.IPAddr
 
 	// Finger resolves Chord node at given finger table offset i.
 	//

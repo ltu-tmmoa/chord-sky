@@ -1,9 +1,6 @@
 package chord
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 func TestNodeJoin2(t *testing.T) {
 	nodes := prepareNodes(0, 1)
@@ -180,11 +177,10 @@ func TestNodeJoin8(t *testing.T) {
 func prepareNodes(ids ...int64) []*LocalNode {
 	nodes := make([]*LocalNode, len(ids))
 	for i, s := range ids {
-		nodes[i] = newLocalNode(stringAddr(fmt.Sprintf("%02d", s)), newHash64(s, M3))
+		nodes[i] = newLocalNode(fakeAddr(s), newHash64(s, M3))
 	}
 	return nodes
 }
-
 
 func prepareNodeFingerTests(t *testing.T, node *LocalNode) (func(int64), func(int, int64)) {
 	expectPredecessorID := func(predecessorID int64) {

@@ -1,19 +1,15 @@
 package chord
 
 import (
+	"fmt"
 	"math/big"
+	"net"
 	"testing"
 )
 
-// stringAddr allows a regular string to be treated as a net.Addr.
-type stringAddr string
-
-func (s stringAddr) Network() string {
-	return string(s)
-}
-
-func (s stringAddr) String() string {
-	return string(s)
+func fakeAddr(id int64) *net.IPAddr {
+	ipAddr, _ := net.ResolveIPAddr("ip4", fmt.Sprintf("192.168.1.%d", id+1))
+	return ipAddr
 }
 
 func newHash64(value int64, bits int) *Hash {

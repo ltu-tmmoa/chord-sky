@@ -10,7 +10,7 @@ import (
 
 // LocalNode represents a potential member of a Chord ring.
 type LocalNode struct {
-	addr        net.Addr
+	ipAddr      net.IPAddr
 	id          *Hash
 	fingers     []*Finger
 	predecessor Node
@@ -18,27 +18,22 @@ type LocalNode struct {
 
 // NewLocalNode creates a new local node from given address, which ought to be the application's public-facing IP
 // address.
-func NewLocalNode(addr net.Addr) *LocalNode {
-	return newLocalNode(addr, hash(addr, sha1.Size * 8))
+func NewLocalNode(ipAddr *net.IPAddr) *LocalNode {
+	return newLocalNode(ipAddr, hash(ipAddr, sha1.Size*8))
 }
 
-func newLocalNode(addr net.Addr, id *Hash) *LocalNode {
+func newLocalNode(ipAddr *net.IPAddr, id *Hash) *LocalNode {
 	node := new(LocalNode)
-	node.addr = addr
+	node.ipAddr = *ipAddr
 	node.id = id
 
 	fingers := make([]*Finger, id.bits)
 	for i := range fingers {
-		fingers[i] = newFinger(id, i + 1)
+		fingers[i] = newFinger(id, i+1)
 	}
 	node.fingers = fingers
 	node.predecessor = nil
 	return node
-}
-
-// Addr provides node network address.
-func (node *LocalNode) Addr() net.Addr {
-	return node.addr
 }
 
 // BigInt returns node identifier as a big.Int.
@@ -69,6 +64,11 @@ func (node *LocalNode) Eq(other ID) bool {
 // Hash turns ID into Hash representation.
 func (node *LocalNode) Hash() Hash {
 	return node.id.Hash()
+}
+
+// IPAddr provides node network IP address.
+func (node *LocalNode) IPAddr() *net.IPAddr {
+	return &node.ipAddr
 }
 
 // Finger resolves Chord node at given finger table offset i.
@@ -168,7 +168,7 @@ func (node *LocalNode) SetPredecessor(predecessor Node) error {
 func (node *LocalNode) Join(node0 Node) {
 	if node0 != nil {
 		if node.Bits() != node0.Bits() {
-			node.id = hash(node.addr, node0.Bits())
+			node.id = hash(node.ipAddr, node0.Bits())
 		}
 		node.initFingerTable(node0)
 		updateOthers(node)
