@@ -1,7 +1,6 @@
 package chord
 
 import (
-	"crypto/sha1"
 	"fmt"
 	"math/big"
 	"math/rand"
@@ -11,7 +10,7 @@ import (
 // LocalNode represents a potential member of a Chord ring.
 type LocalNode struct {
 	ipAddr      net.IPAddr
-	id          *Hash
+	id          Hash
 	fingers     []*Finger
 	predecessor Node
 }
@@ -19,13 +18,13 @@ type LocalNode struct {
 // NewLocalNode creates a new local node from given address, which ought to be the application's public-facing IP
 // address.
 func NewLocalNode(ipAddr *net.IPAddr) *LocalNode {
-	return newLocalNode(ipAddr, hash(ipAddr, sha1.Size*8))
+	return newLocalNode(ipAddr, hash(ipAddr, HashBitsMax))
 }
 
 func newLocalNode(ipAddr *net.IPAddr, id *Hash) *LocalNode {
 	node := new(LocalNode)
 	node.ipAddr = *ipAddr
-	node.id = id
+	node.id = *id
 
 	fingers := make([]*Finger, id.bits)
 	for i := range fingers {
@@ -168,7 +167,7 @@ func (node *LocalNode) SetPredecessor(predecessor Node) error {
 func (node *LocalNode) Join(node0 Node) {
 	if node0 != nil {
 		if node.Bits() != node0.Bits() {
-			node.id = hash(node.ipAddr, node0.Bits())
+			node.id = *hash(node.ipAddr, node0.Bits())
 		}
 		node.initFingerTable(node0)
 		updateOthers(node)

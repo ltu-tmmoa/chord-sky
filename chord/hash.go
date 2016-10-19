@@ -6,6 +6,11 @@ import (
 	"math/big"
 )
 
+const (
+	// HashBitsMax represents the maximum allowed number of bits in Hash objects.
+	HashBitsMax = sha1.Size * 8
+)
+
 // Hash identifies some Chord node or key.
 type Hash struct {
 	value big.Int
