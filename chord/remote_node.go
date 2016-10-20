@@ -87,8 +87,8 @@ func (node *RemoteNode) Finger(i int) *Finger {
 	  body, err := ioutil.ReadAll(resp.Body)
 	  addr, err := net.ResolveIPAddr("ip", string(body))
 	  if err != nil { return nil }
-
-	  return NewRemoteNode(addr)
+	  node.fingers[i].SetNodeFromIPAddress(addr)
+	  return node.fingers[i]
 }
 
 // Successor yields the next node in this node's ring.
