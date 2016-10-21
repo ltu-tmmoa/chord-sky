@@ -73,7 +73,10 @@ func (node *RemoteNode) IPAddr() *net.IPAddr {
 // The result is only defined for i in [1,M], where M is the amount of bits set
 // at node ring creation.
 func (node *RemoteNode) Finger(i int) *Finger {
-	  u, err := url.Parse(node.ipAddr.String()+"/node/finger")
+	  u, err := url.Parse("node/finger")
+	  u.Host = node.ipAddr.String() + ":8080"
+	  u.Scheme = "http"
+
 	  if err != nil { log.Logger.Fatal(err) }
 
 	  q := u.Query()
@@ -94,7 +97,10 @@ func (node *RemoteNode) Finger(i int) *Finger {
 // Successor yields the next node in this node's ring.
 func (node *RemoteNode) Successor() (Node, error) {
 
-	  u, err := url.Parse(node.ipAddr.String()+"/node/successor")
+	  u, err := url.Parse("node/successor")
+	  u.Host = node.ipAddr.String() + ":8080"
+	  u.Scheme = "http"
+
 	  if err != nil { log.Logger.Fatal(err) }
 
 	  resp, err := http.Get(u.String())
@@ -111,7 +117,10 @@ func (node *RemoteNode) Successor() (Node, error) {
 
 // Predecessor yields the previous node in this node's ring.
 func (node *RemoteNode) Predecessor() (Node, error) {
-	  u, err := url.Parse(node.ipAddr.String()+"/node/predecessor")
+	  u, err := url.Parse("node/predecessor")
+	  u.Host = node.ipAddr.String() + ":8080"
+	  u.Scheme = "http"
+
 	  if err != nil { log.Logger.Fatal(err) }
 
 	  resp, err := http.Get(u.String())
@@ -127,7 +136,9 @@ func (node *RemoteNode) Predecessor() (Node, error) {
 
 // FindSuccessor asks this node to find successor of given ID.
 func (node *RemoteNode) FindSuccessor(id ID) (Node, error) {
-	  u, err := url.Parse(node.ipAddr.String()+"/node/successors")
+	  u, err := url.Parse("node/successors")
+	  u.Host = node.ipAddr.String() + ":8080"
+	  u.Scheme = "http"
 	  if err != nil { log.Logger.Fatal(err) }
 	  q := u.Query()
 	  q.Set("id", id.String())
@@ -146,7 +157,9 @@ func (node *RemoteNode) FindSuccessor(id ID) (Node, error) {
 
 // FindPredecessor asks this node to find a predecessor of given ID.
 func (node *RemoteNode) FindPredecessor(id ID) (Node, error) {
-	  u, err := url.Parse(node.ipAddr.String()+"/node/predecessors")
+	  u, err := url.Parse("node/predecessors")
+	  u.Host = node.ipAddr.String() + ":8080"
+	  u.Scheme = "http"
 	  if err != nil { log.Logger.Fatal(err) }
 
 	  q := u.Query()
@@ -166,14 +179,19 @@ func (node *RemoteNode) FindPredecessor(id ID) (Node, error) {
 
 // SetSuccessor attempts to set this node's successor to given node.
 func (node *RemoteNode) SetSuccessor(successor Node) error {
-	  u, err := url.Parse(node.ipAddr.String()+"/node/successor")
+	  u, err := url.Parse("node/successor")
+	  u.Host = node.ipAddr.String() + ":8080"
+	  u.Scheme = "http"
+
 	  if err != nil { log.Logger.Fatal(err) }
 
 	  q := u.Query()
 	  q.Set("ip", successor.IPAddr().String())
 	  u.RawQuery = q.Encode()
 
-	  resp, err := http.NewRequest("PUT", u.String(), nil)
+	  req, err := http.NewRequest(http.MethodPut, u.String(), nil)
+	  client := &http.Client{}
+	  resp , err := client.Do(req)
 	  defer resp.Body.Close()
 	  if err != nil { return err }
 	  return nil
@@ -181,14 +199,19 @@ func (node *RemoteNode) SetSuccessor(successor Node) error {
 
 // SetPredecessor attempts to set this node's predecessor to given node.
 func (node *RemoteNode) SetPredecessor(predecessor Node) error {
-	  u, err := url.Parse(node.ipAddr.String()+"/node/predecessor")
+	  u, err := url.Parse("node/predecessor")
+	  u.Host = node.ipAddr.String() + ":8080"
+	  u.Scheme = "http"
+
 	  if err != nil { log.Logger.Fatal(err) }
 
 	  q := u.Query()
 	  q.Set("ip", predecessor.IPAddr().String())
 	  u.RawQuery = q.Encode()
-
-	  resp, err := http.NewRequest("PUT", u.String(), nil)
+	  // removing the reader cause a problem
+	  req, err := http.NewRequest(http.MethodPut, u.String(), nil)
+	  client := &http.Client{}
+	  resp , err := client.Do(req)
 	  defer resp.Body.Close()
 	  if err != nil { return err }
 	  return nil

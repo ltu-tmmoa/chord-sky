@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
-
 	"github.com/ltu-tmmoa/chord-sky/chord"
 )
 
@@ -32,42 +31,50 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			node.getSuccessor(w, r)
+			  fmt.Println("Got get successor")
 			return
 		case "PUT":
 			node.putSuccessor(w, r)
+			  fmt.Println("Got put successor")
 			return
 		}
 	case "/node/successors":
 		switch r.Method {
 		case "GET":
 			node.getSuccessors(w, r)
+			  fmt.Println("Got get successors")
 			return
 		}
 	case "/node/predecessor":
 		switch r.Method {
 		case "GET":
 			node.getPredecessor(w, r)
+			  fmt.Println("Got get predecessor")
 			return
 		case "PUT":
 			node.putPredecessor(w, r)
+			  fmt.Println("Got put predecessor")
 			return
 		}
 	case "/node/predecessors":
 		switch r.Method {
 		case "GET":
 			node.getPredecessors(w, r)
+			  fmt.Println("Got Get predecessors")
 			return
 		}
 	case "/node/finger":
 		switch r.Method {
 		case "GET":
 			node.getFinger(w, r)
+			  fmt.Println("Got get finger")
 			return
 		}
 	case "/node/info":
 		switch r.Method {
 		case "GET":
 			node.getInfo(w, r)
+			  fmt.Println("Got get info")
 			return
 		}
 	}
@@ -86,7 +93,6 @@ func (node *Node) getInfo(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(200)
 	fmt.Fprint(w, buffer.String())
-	//TODO ask emanuel about print
 
 }
 

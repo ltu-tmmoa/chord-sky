@@ -47,9 +47,11 @@ func main() {
 			localNode.Join(nil)
 
 		} else {
-			log.Logger.Println("Joining ring via", trimmedPeer, "...")
+			  log.Logger.Println("Joining ring via", trimmedPeer, "...")
 
-			ipAddr, err := net.ResolveIPAddr("ip", trimmedPeer)
+			  //log.Logger.Println("Joining ring via", "172.17.0.2", "...")
+			  //ipAddr, err := net.ResolveIPAddr("ip", "172.17.0.2")
+			  ipAddr, err := net.ResolveIPAddr("ip", trimmedPeer)
 			if err != nil {
 				log.Logger.Fatalln(err)
 			}
