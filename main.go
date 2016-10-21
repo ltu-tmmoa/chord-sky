@@ -16,9 +16,11 @@ import (
 )
 
 var peer string
+var ip string
 
 func init() {
 	flag.StringVar(&peer, "peer", "", "<IP:PORT> of Chord Sky Node to join. If not given a new ring is created.")
+	  flag.StringVar(&ip, "ip", "", "prefered interface")
 }
 
 func main() {
