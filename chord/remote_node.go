@@ -129,7 +129,6 @@ func (node *RemoteNode) Predecessor() (Node, error) {
 func (node *RemoteNode) FindSuccessor(id ID) (Node, error) {
 	  u, err := url.Parse(node.ipAddr.String()+"/node/successors")
 	  if err != nil { log.Logger.Fatal(err) }
-
 	  q := u.Query()
 	  q.Set("id", id.String())
 	  u.RawQuery = q.Encode()

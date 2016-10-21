@@ -1,13 +1,14 @@
 package chord
 
 import (
-	"sync"
-	"github.com/ltu-tmmoa/chord-sky/chord"
-	"net/http"
+	"bytes"
 	"fmt"
-	  "strconv"
-	  "net"
-	  "bytes"
+	"net"
+	"net/http"
+	"strconv"
+	"sync"
+
+	"github.com/ltu-tmmoa/chord-sky/chord"
 )
 
 // PublicNode is used to expose Chord Node operations via RPC.
@@ -58,34 +59,34 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case "/node/finger":
-		  switch r.Method {
-		  case "GET":
-			    node.getFinger(w, r)
-			    return
-		  }
+		switch r.Method {
+		case "GET":
+			node.getFinger(w, r)
+			return
+		}
 	case "/node/info":
-		  switch r.Method {
-		  case "GET":
-			    node.getInfo(w, r)
-			    return
-		  }
+		switch r.Method {
+		case "GET":
+			node.getInfo(w, r)
+			return
+		}
 	}
 	node.notFound(w)
 }
 
-func (node *Node) getInfo(w http.ResponseWriter, r *http.Request){
-	  node.mutex.RLock()
-	  defer node.mutex.RUnlock()
-	  bits:= node.node.Bits()
-	  var buffer bytes.Buffer
-	  var finger *chord.Finger
-	  for i:=1; i <= bits; i++{
-		    finger = node.node.Finger(i)
-		    buffer.WriteString(finger.String() + " " + finger.Node().IPAddr().String() + "\n")
-	  }
-	  w.WriteHeader(200)
-	  fmt.Fprint(w, buffer.String())
-	  //TODO ask emanuel about print
+func (node *Node) getInfo(w http.ResponseWriter, r *http.Request) {
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+	bits := node.node.Bits()
+	var buffer bytes.Buffer
+	var finger *chord.Finger
+	for i := 1; i <= bits; i++ {
+		finger = node.node.Finger(i)
+		buffer.WriteString(finger.String() + " " + finger.Node().IPAddr().String() + "\n")
+	}
+	w.WriteHeader(200)
+	fmt.Fprint(w, buffer.String())
+	//TODO ask emanuel about print
 
 }
 
@@ -94,20 +95,20 @@ func (node *Node) getInfo(w http.ResponseWriter, r *http.Request){
 // Example: curl -v '<ip:port>/node/successor'
 
 func (node *Node) getFinger(w http.ResponseWriter, r *http.Request) {
-	  node.mutex.RLock()
-	  defer node.mutex.RUnlock()
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
 
-	  fing := r.URL.Query().Get("finger")
-	  if len(fing) == 0 {
-		    node.badRequest(w, "finger param not provided")
-		    return
-	  }
-	  finger, _ := strconv.Atoi(fing)
+	fing := r.URL.Query().Get("finger")
+	if len(fing) == 0 {
+		node.badRequest(w, "finger param not provided")
+		return
+	}
+	finger, _ := strconv.Atoi(fing)
 
-	  res := node.node.Finger(finger).Node()
+	res := node.node.Finger(finger).Node()
 
-	  w.WriteHeader(200)
-	  fmt.Fprint(w, res.IPAddr())
+	w.WriteHeader(200)
+	fmt.Fprint(w, res.IPAddr())
 }
 
 func (node *Node) getSuccessor(w http.ResponseWriter, r *http.Request) {
@@ -181,12 +182,12 @@ func (node *Node) putSuccessor(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, "ip param not provided\n")
 		return
 	}
-	  addr , err := net.ResolveIPAddr("ip", ipPara)
+	addr, err := net.ResolveIPAddr("ip", ipPara)
 
-	  if err != nil {
-		    node.internalServerError(w, err)
-		    return
-	  }
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
 	node.node.SetSuccessor(chord.NewRemoteNode(addr))
 	w.WriteHeader(201)
 }
@@ -195,21 +196,20 @@ func (node *Node) putPredecessor(w http.ResponseWriter, r *http.Request) {
 	node.mutex.Lock()
 	defer node.mutex.Unlock()
 
-	  ipPara := r.URL.Query().Get("ip")
-	  if len(ipPara) == 0 {
-		    node.badRequest(w, "ip param not provided\n")
-		    return
-	  }
-	  addr , err := net.ResolveIPAddr("ip", ipPara)
+	ipPara := r.URL.Query().Get("ip")
+	if len(ipPara) == 0 {
+		node.badRequest(w, "ip param not provided\n")
+		return
+	}
+	addr, err := net.ResolveIPAddr("ip", ipPara)
 
-	  if err != nil {
-		    node.internalServerError(w, err)
-		    return
-	  }
-	  node.node.SetPredecessor(chord.NewRemoteNode(addr))
-	  w.WriteHeader(201)
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+	node.node.SetPredecessor(chord.NewRemoteNode(addr))
+	w.WriteHeader(201)
 }
-
 
 func (node *Node) notFound(w http.ResponseWriter) {
 	w.WriteHeader(404)
