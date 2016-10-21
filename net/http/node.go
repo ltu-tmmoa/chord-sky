@@ -7,6 +7,7 @@ import (
 	"fmt"
 	  "strconv"
 	  "net"
+	  "bytes"
 )
 
 // PublicNode is used to expose Chord Node operations via RPC.
@@ -62,8 +63,30 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			    node.getFinger(w, r)
 			    return
 		  }
+	case "/node/info":
+		  switch r.Method {
+		  case "GET":
+			    node.getInfo(w, r)
+			    return
+		  }
 	}
 	node.notFound(w)
+}
+
+func (node *Node) getInfo(w http.ResponseWriter, r *http.Request){
+	  node.mutex.RLock()
+	  defer node.mutex.RUnlock()
+	  bits:= node.node.Bits()
+	  var buffer bytes.Buffer
+	  var finger *chord.Finger
+	  for i:=1; i <= bits; i++{
+		    finger = node.node.Finger(i)
+		    buffer.WriteString(finger.String() + " " + finger.Node().IPAddr().String() + "\n")
+	  }
+	  w.WriteHeader(200)
+	  fmt.Fprint(w, buffer.String())
+	  //TODO ask emanuel about print
+
 }
 
 // Handles HTTP GET successor request.

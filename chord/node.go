@@ -57,4 +57,8 @@ type Node interface {
 
 	// String turns Node into its canonical string representation.
 	String() string
+
+	// PrintRing a String represent the Node's ring
+	// PrintRing() string
+
 }

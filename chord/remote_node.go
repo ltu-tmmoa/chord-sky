@@ -195,6 +195,7 @@ func (node *RemoteNode) SetPredecessor(predecessor Node) error {
 	  return nil
 }
 
+
 // String turns Node into its canonical string representation.
 func (node *RemoteNode) String() string {
 	  return node.id.String()
