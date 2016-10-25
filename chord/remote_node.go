@@ -73,11 +73,11 @@ func (node *RemoteNode) FingerNode(i int) (Node, error) {
 	u.RawQuery = q.Encode()
 
 	res, err := http.Get(u.String())
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
 	if err != nil {
 		return nil, err
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -107,10 +107,13 @@ func (node *RemoteNode) SetFingerNode(i int, fing Node) error {
 	}
 
 	res, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return err
+	}
 	if res.Body != nil {
 		defer res.Body.Close()
 	}
-	return err
+	return nil
 }
 
 // Successor yields the next node in this node's ring.
@@ -123,11 +126,11 @@ func (node *RemoteNode) Successor() (Node, error) {
 	}
 
 	res, err := http.Get(u.String())
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
 	if err != nil {
 		return nil, err
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -148,11 +151,11 @@ func (node *RemoteNode) Predecessor() (Node, error) {
 	}
 
 	res, err := http.Get(u.String())
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
 	if err != nil {
 		return nil, err
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -205,11 +208,11 @@ func (node *RemoteNode) FindPredecessor(id ID) (Node, error) {
 	u.RawQuery = q.Encode()
 
 	res, err := http.Get(u.String())
-	if res.Body != nil {
-		defer res.Body.Close()
-	}
 	if err != nil {
 		return nil, err
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -237,10 +240,13 @@ func (node *RemoteNode) SetSuccessor(successor Node) error {
 	}
 
 	res, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return err
+	}
 	if res.Body != nil {
 		defer res.Body.Close()
 	}
-	return err
+	return nil
 }
 
 // SetPredecessor attempts to set this node's predecessor to given node.
@@ -259,10 +265,13 @@ func (node *RemoteNode) SetPredecessor(predecessor Node) error {
 	}
 
 	res, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return err
+	}
 	if res.Body != nil {
 		defer res.Body.Close()
 	}
-	return err
+	return nil
 }
 
 // String turns Node into its canonical string representation.
