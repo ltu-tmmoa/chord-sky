@@ -5,7 +5,7 @@ import "net"
 // Node represents some Chord node, available either locally or remotely.
 type Node interface {
 	// ID returns node ID.
-	ID() ID
+	ID() *ID
 
 	// IPAddr provides node network address.
 	IPAddr() *net.IPAddr
@@ -35,10 +35,10 @@ type Node interface {
 	Predecessor() (Node, error)
 
 	// FindSuccessor asks this node to find successor of given ID.
-	FindSuccessor(id ID) (Node, error)
+	FindSuccessor(id *ID) (Node, error)
 
 	// FindPredecessor asks this node to find a predecessor of given ID.
-	FindPredecessor(id ID) (Node, error)
+	FindPredecessor(id *ID) (Node, error)
 
 	// SetSuccessor attempts to set this node's successor to given node.
 	SetSuccessor(succ Node) error

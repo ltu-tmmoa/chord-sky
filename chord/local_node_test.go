@@ -177,19 +177,19 @@ func TestNodeJoin8(t *testing.T) {
 func prepareNodes(ids ...int64) []*LocalNode {
 	nodes := make([]*LocalNode, len(ids))
 	for i, s := range ids {
-		nodes[i] = newLocalNode(fakeAddr(s), newHash64(s, M3))
+		nodes[i] = newLocalNode(fakeAddr(s), newID64(s, M3))
 	}
 	return nodes
 }
 
 func prepareNodeFingerTests(t *testing.T, node *LocalNode) (func(int64), func(int, int64)) {
 	expectPredecessorID := func(predecessorID int64) {
-		if n := node.predecessor; !n.ID().Eq(newHash64(predecessorID, M3)) {
+		if n := node.predecessor; !n.ID().Eq(newID64(predecessorID, M3)) {
 			t.Errorf("{%v}.predecessor expected to be %v, was %v", node, predecessorID, n)
 		}
 	}
 	expectFingerNodeID := func(finger int, nodeID int64) {
-		if n, _ := node.FingerNode(finger); !n.ID().Eq(newHash64(nodeID, M3)) {
+		if n, _ := node.FingerNode(finger); !n.ID().Eq(newID64(nodeID, M3)) {
 			t.Errorf("{%v}.finger(%v).node expected to be %v, was %v.", node, finger, nodeID, n)
 		}
 	}

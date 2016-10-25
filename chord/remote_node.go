@@ -19,15 +19,15 @@ const (
 // RemoteNode represents some Chord node available remotely.
 type RemoteNode struct {
 	ipAddr net.IPAddr
-	id     Hash
+	id     ID
 }
 
 // NewRemoteNode creates a new remote node from given address.
 func NewRemoteNode(ipAddr *net.IPAddr) *RemoteNode {
-	return newRemoteNode(ipAddr, hash(ipAddr, HashBitsMax))
+	return newRemoteNode(ipAddr, identity(ipAddr, HashBitsMax))
 }
 
-func newRemoteNode(ipAddr *net.IPAddr, id *Hash) *RemoteNode {
+func newRemoteNode(ipAddr *net.IPAddr, id *ID) *RemoteNode {
 	node := new(RemoteNode)
 	node.ipAddr = *ipAddr
 	node.id = *id
@@ -35,7 +35,7 @@ func newRemoteNode(ipAddr *net.IPAddr, id *Hash) *RemoteNode {
 }
 
 // ID returns node ID.
-func (node *RemoteNode) ID() ID {
+func (node *RemoteNode) ID() *ID {
 	return &node.id
 }
 
@@ -167,7 +167,7 @@ func (node *RemoteNode) Predecessor() (Node, error) {
 }
 
 // FindSuccessor asks this node to find successor of given ID.
-func (node *RemoteNode) FindSuccessor(id ID) (Node, error) {
+func (node *RemoteNode) FindSuccessor(id *ID) (Node, error) {
 	u, err := url.Parse("node/successors")
 	u.Host = fmt.Sprintf("%s:8080", node.IPAddr().String())
 	u.Scheme = schemeHTTP
@@ -195,7 +195,7 @@ func (node *RemoteNode) FindSuccessor(id ID) (Node, error) {
 }
 
 // FindPredecessor asks this node to find a predecessor of given ID.
-func (node *RemoteNode) FindPredecessor(id ID) (Node, error) {
+func (node *RemoteNode) FindPredecessor(id *ID) (Node, error) {
 	u, err := url.Parse("node/predecessors")
 	u.Host = fmt.Sprintf("%s:8080", node.IPAddr().String())
 	u.Scheme = schemeHTTP

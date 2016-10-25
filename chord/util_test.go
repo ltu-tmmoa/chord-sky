@@ -12,8 +12,8 @@ func fakeAddr(id int64) *net.IPAddr {
 	return ipAddr
 }
 
-func newHash64(value int64, bits int) *Hash {
-	return newHash(*big.NewInt(value), bits)
+func newID64(value int64, bits int) *ID {
+	return newID(*big.NewInt(value), bits)
 }
 
 func TestIdIntervalContainsEE(t *testing.T) {
@@ -118,13 +118,13 @@ func TestIdIntervalContainsIE(t *testing.T) {
 	}
 }
 
-func prepareIntervalTester(t *testing.T, f func(ID, ID, ID) bool) func(start, stop int64) func(bool) func(int64) {
+func prepareIntervalTester(t *testing.T, f func(*ID, *ID, *ID) bool) func(start, stop int64) func(bool) func(int64) {
 	return func(start, stop int64) func(bool) func(int64) {
 		return func(contains bool) func(int64) {
 			return func(other int64) {
-				start0 := newHash64(start, M3)
-				stop0 := newHash64(stop, M3)
-				other0 := newHash64(other, M3)
+				start0 := newID64(start, M3)
+				stop0 := newID64(stop, M3)
+				other0 := newID64(other, M3)
 				if f(start0, stop0, other0) != contains {
 					var operator string
 					if contains {

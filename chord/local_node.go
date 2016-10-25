@@ -15,7 +15,7 @@ import (
 // may cause a deadlock.
 type LocalNode struct {
 	ipAddr      net.IPAddr
-	id          Hash
+	id          ID
 	fingers     []*Finger
 	fingerNodes []Node
 	predecessor Node
@@ -25,10 +25,10 @@ type LocalNode struct {
 // NewLocalNode creates a new local node from given address, which ought to be the application's public-facing IP
 // address.
 func NewLocalNode(ipAddr *net.IPAddr) *LocalNode {
-	return newLocalNode(ipAddr, hash(ipAddr, HashBitsMax))
+	return newLocalNode(ipAddr, identity(ipAddr, HashBitsMax))
 }
 
-func newLocalNode(ipAddr *net.IPAddr, id *Hash) *LocalNode {
+func newLocalNode(ipAddr *net.IPAddr, id *ID) *LocalNode {
 	node := new(LocalNode)
 	node.ipAddr = *ipAddr
 	node.id = *id
@@ -45,7 +45,7 @@ func newLocalNode(ipAddr *net.IPAddr, id *Hash) *LocalNode {
 }
 
 // ID returns node ID.
-func (node *LocalNode) ID() ID {
+func (node *LocalNode) ID() *ID {
 	return &node.id
 }
 
@@ -154,14 +154,14 @@ func predecessor(node Node) (Node, error) {
 // FindSuccessor asks this node to find successor of given ID.
 //
 // See Chord paper figure 4.
-func (node *LocalNode) FindSuccessor(id ID) (Node, error) {
+func (node *LocalNode) FindSuccessor(id *ID) (Node, error) {
 	node.mutex.RLock()
 	defer node.mutex.RUnlock()
 
 	return findSuccessor(node, id)
 }
 
-func findSuccessor(node Node, id ID) (Node, error) {
+func findSuccessor(node Node, id *ID) (Node, error) {
 	node0, err := findPredecessor(node, id)
 	if err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func findSuccessor(node Node, id ID) (Node, error) {
 // FindPredecessor asks node to find id's predecessor.
 //
 // See Chord paper figure 4.
-func (node *LocalNode) FindPredecessor(id ID) (Node, error) {
+func (node *LocalNode) FindPredecessor(id *ID) (Node, error) {
 	node.mutex.RLock()
 	defer node.mutex.RUnlock()
 
@@ -182,7 +182,7 @@ func (node *LocalNode) FindPredecessor(id ID) (Node, error) {
 // Asks node to find id's predecessor.
 //
 // See Chord paper figure 4.
-func findPredecessor(n Node, id ID) (Node, error) {
+func findPredecessor(n Node, id *ID) (Node, error) {
 	n0 := n
 	for {
 		succ, err := successor(n0)
@@ -202,7 +202,7 @@ func findPredecessor(n Node, id ID) (Node, error) {
 // Returns closest finger preceding ID.
 //
 // See Chord paper figure 4.
-func closestPrecedingFinger(n Node, id ID) (Node, error) {
+func closestPrecedingFinger(n Node, id *ID) (Node, error) {
 	for i := n.ID().Bits(); i > 0; i-- {
 		f, err := fingerNode(n, i)
 		if err != nil {
@@ -279,12 +279,13 @@ func (node *LocalNode) Join(node0 Node) {
 func updateOthers(n Node) error {
 	m := n.ID().Bits()
 	for i := 2; i <= m; i++ {
-		var id ID
+		var id *ID
 		{
 			subt := big.Int{}
 			subt.SetInt64(2)
 			subt.Exp(&subt, big.NewInt(int64(i-1)), nil)
-			id = n.ID().Diff(newHash(subt, m))
+
+			id = n.ID().Diff(newID(subt, m))
 		}
 		pred, err := findPredecessor(n, id)
 		if err != nil {

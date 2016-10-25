@@ -11,15 +11,15 @@ type Finger struct {
 	stop  ID
 }
 
-func newFinger(id ID, i int) *Finger {
+func newFinger(id *ID, i int) *Finger {
 	return &Finger{
-		start: fingerStart(id, i),
-		stop:  fingerStart(id, i+1),
+		start: *fingerStart(id, i),
+		stop:  *fingerStart(id, i+1),
 	}
 }
 
 // (n + 2^(i-1)) mod (2^m)
-func fingerStart(id ID, i int) ID {
+func fingerStart(id *ID, i int) *ID {
 	n := id.BigInt()
 	m := big.NewInt(int64(id.Bits()))
 	two := big.NewInt(2)
@@ -40,17 +40,17 @@ func fingerStart(id ID, i int) ID {
 	result := big.Int{}
 	result.Mod(&sum, &ceil)
 
-	return newHash(result, id.Bits())
+	return newID(result, id.Bits())
 }
 
 // Start yields the Chord node finger[i].start finger ID.
-func (finger *Finger) Start() ID {
-	return finger.start
+func (finger *Finger) Start() *ID {
+	return &finger.start
 }
 
 // Stop yields the Chord node finger[i + 1].start finger ID.
-func (finger *Finger) Stop() ID {
-	return finger.stop
+func (finger *Finger) Stop() *ID {
+	return &finger.stop
 }
 
 // String produces a canonical string representation of this Finger.

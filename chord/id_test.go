@@ -3,8 +3,8 @@ package chord
 import "testing"
 
 func TestHashCmp(t *testing.T) {
-	a := newHash64(5, M3)
-	b := newHash64(4, M3)
+	a := newID64(5, M3)
+	b := newID64(4, M3)
 
 	if r := a.Cmp(a); r != 0 {
 		t.Errorf("%v.Cmp(%v) %v != 0", a, a, r)
@@ -21,8 +21,8 @@ func TestHashCmp(t *testing.T) {
 }
 
 func TestHashDiff(t *testing.T) {
-	a := newHash64(5, M3)
-	b := newHash64(1, M3)
+	a := newID64(5, M3)
+	b := newID64(1, M3)
 
 	if r := a.Diff(a).BigInt().Int64(); r != 0 {
 		t.Errorf("%v.Diff(%v) %v != 0", a, a, r)
