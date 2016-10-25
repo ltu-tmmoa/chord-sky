@@ -72,13 +72,15 @@ func (node *RemoteNode) FingerNode(i int) (Node, error) {
 	q.Set("id", strconv.Itoa(i))
 	u.RawQuery = q.Encode()
 
-	resp, err := http.Get(u.String())
-	defer resp.Body.Close()
+	res, err := http.Get(u.String())
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
@@ -105,7 +107,9 @@ func (node *RemoteNode) SetFingerNode(i int, fing Node) error {
 	}
 
 	res, err := (&http.Client{}).Do(req)
-	defer res.Body.Close()
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
 	return err
 }
 
@@ -118,13 +122,15 @@ func (node *RemoteNode) Successor() (Node, error) {
 		log.Logger.Fatal(err)
 	}
 
-	resp, err := http.Get(u.String())
-	defer resp.Body.Close()
+	res, err := http.Get(u.String())
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
@@ -141,13 +147,15 @@ func (node *RemoteNode) Predecessor() (Node, error) {
 		log.Logger.Fatal(err)
 	}
 
-	resp, err := http.Get(u.String())
-	defer resp.Body.Close()
+	res, err := http.Get(u.String())
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
@@ -168,13 +176,13 @@ func (node *RemoteNode) FindSuccessor(id ID) (Node, error) {
 	q.Set("id", id.String())
 	u.RawQuery = q.Encode()
 
-	resp, err := http.Get(u.String())
-	defer resp.Body.Close()
+	res, err := http.Get(u.String())
+	defer res.Body.Close()
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
@@ -196,13 +204,15 @@ func (node *RemoteNode) FindPredecessor(id ID) (Node, error) {
 	q.Set("id", id.String())
 	u.RawQuery = q.Encode()
 
-	resp, err := http.Get(u.String())
-	defer resp.Body.Close()
+	res, err := http.Get(u.String())
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(res.Body)
 	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
@@ -227,7 +237,9 @@ func (node *RemoteNode) SetSuccessor(successor Node) error {
 	}
 
 	res, err := (&http.Client{}).Do(req)
-	defer res.Body.Close()
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
 	return err
 }
 
@@ -247,7 +259,9 @@ func (node *RemoteNode) SetPredecessor(predecessor Node) error {
 	}
 
 	res, err := (&http.Client{}).Do(req)
-	defer res.Body.Close()
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
 	return err
 }
 
