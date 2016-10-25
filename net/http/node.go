@@ -95,17 +95,39 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (node *Node) getInfo(w http.ResponseWriter, r *http.Request) {
 	bits := node.node.ID().Bits()
 	var buffer bytes.Buffer
-	for i := 1; i <= bits; i++ {
-		finger, err := node.node.FingerNode(i)
+	buffer.WriteString("Predecessor:\n")
+	{
+		pred, err := node.node.Predecessor()
 		if err != nil {
 			node.internalServerError(w, err)
 			return
 		}
-		buffer.WriteString(finger.String())
-		buffer.WriteString(" ")
-		buffer.WriteString(finger.IPAddr().String())
-		buffer.WriteString("\n")
+		buffer.WriteString(pred.String())
 	}
+	buffer.WriteString("\n\n")
+
+	buffer.WriteString("Successor:\n")
+	{
+		succ, err := node.node.Successor()
+		if err != nil {
+			node.internalServerError(w, err)
+			return
+		}
+		buffer.WriteString(succ.String())
+	}
+	buffer.WriteString("\n\n")
+
+	buffer.WriteString("Finger table:\n")
+	for i := 1; i <= bits; i++ {
+		fing, err := node.node.FingerNode(i)
+		if err != nil {
+			node.internalServerError(w, err)
+			return
+		}
+		buffer.WriteString(fmt.Sprintf("%3d: %v\n", i, fing))
+	}
+	buffer.WriteString("\n")
+
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, buffer.String())
 }

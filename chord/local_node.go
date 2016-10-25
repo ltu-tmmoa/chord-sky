@@ -461,5 +461,5 @@ func (node *LocalNode) PrintRing() {
 
 // String produces canonical string representation of this node.
 func (node *LocalNode) String() string {
-	return node.id.String()
+	return fmt.Sprintf("%s %s", node.id.String(), node.ipAddr.String())
 }
