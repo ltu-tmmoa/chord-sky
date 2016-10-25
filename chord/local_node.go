@@ -9,6 +9,10 @@ import (
 )
 
 // LocalNode represents a potential member of a Chord ring.
+//
+// All public methods, except those accessing immutable properties, are locked.
+// This means that calling another public method from within a public method
+// may cause a deadlock.
 type LocalNode struct {
 	ipAddr      net.IPAddr
 	id          Hash
