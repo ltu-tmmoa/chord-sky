@@ -25,7 +25,33 @@ func NewNode(node chord.Node) *Node {
 
 // ServeHTTP routes incoming HTTP requests.
 func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "%v", r)
+		}
+	}()
+
 	switch r.URL.Path {
+	case "/node/info":
+		switch r.Method {
+		case http.MethodGet:
+			node.getInfo(w, r)
+			fmt.Println("Got get info")
+			return
+		}
+	case "/node/fingers":
+		switch r.Method {
+		case http.MethodGet:
+			node.getFingers(w, r)
+			fmt.Println("Got get fingers")
+			return
+
+		case http.MethodPut:
+			node.putFingers(w, r)
+			fmt.Println("Got put fingers")
+			return
+		}
 	case "/node/successor":
 		switch r.Method {
 		case http.MethodGet:
@@ -50,7 +76,7 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			node.getPredecessor(w, r)
 			fmt.Println("Got get predecessor")
 			return
-		case "PUT":
+		case http.MethodPut:
 			node.putPredecessor(w, r)
 			fmt.Println("Got put predecessor")
 			return
@@ -62,20 +88,6 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Got Get predecessors")
 			return
 		}
-	case "/node/fingers":
-		switch r.Method {
-		case http.MethodGet:
-			node.getFingers(w, r)
-			fmt.Println("Got get fingers")
-			return
-		}
-	case "/node/info":
-		switch r.Method {
-		case http.MethodGet:
-			node.getInfo(w, r)
-			fmt.Println("Got get info")
-			return
-		}
 	}
 	node.notFound(w)
 }
@@ -83,14 +95,19 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (node *Node) getInfo(w http.ResponseWriter, r *http.Request) {
 	bits := node.node.ID().Bits()
 	var buffer bytes.Buffer
-	var finger *chord.Finger
 	for i := 1; i <= bits; i++ {
-		finger = node.node.Finger(i)
-		buffer.WriteString(finger.String() + " " + finger.Node().IPAddr().String() + "\n")
+		finger, err := node.node.FingerNode(i)
+		if err != nil {
+			node.internalServerError(w, err)
+			return
+		}
+		buffer.WriteString(finger.String())
+		buffer.WriteString(" ")
+		buffer.WriteString(finger.IPAddr().String())
+		buffer.WriteString("\n")
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, buffer.String())
-
 }
 
 // Handles HTTP GET fingers request.
@@ -102,11 +119,52 @@ func (node *Node) getFingers(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, "id param not provided")
 		return
 	}
-	index, _ := strconv.Atoi(id)
-	finger := node.node.Finger(index).Node()
+	index, err := strconv.Atoi(id)
+	if err != nil {
+		node.badRequest(w, err.Error())
+		return
+	}
+	finger, err := node.node.FingerNode(index)
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, finger.IPAddr())
+}
+
+// Handles HTTP PUT fingers request.
+//
+// Example: curl -X PUT -d '127.0.0.1' -v '<ip:port>/node/fingers?id=4'
+func (node *Node) putFingers(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+	if len(body) == 0 {
+		node.badRequest(w, "no IP provided in body")
+		return
+	}
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+	id := r.URL.Query().Get("id")
+	if len(id) == 0 {
+		node.badRequest(w, "id param not provided")
+		return
+	}
+	index, err := strconv.Atoi(id)
+	if err != nil {
+		node.badRequest(w, err.Error())
+		return
+	}
+	node.node.SetFingerNode(index, chord.NewRemoteNode(ipAddr))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Handles HTTP GET successor request.
@@ -120,6 +178,29 @@ func (node *Node) getSuccessor(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, successor.IPAddr())
+}
+
+// Handles HTTP PUT successor request.
+//
+// Example: curl -X PUT -d '127.0.0.1' -v '<ip:port>/node/successor'
+func (node *Node) putSuccessor(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+	if len(body) == 0 {
+		node.badRequest(w, "no IP provided in body")
+		return
+	}
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+	node.node.SetSuccessor(chord.NewRemoteNode(ipAddr))
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Handles HTTP GET successors request.
@@ -153,6 +234,29 @@ func (node *Node) getPredecessor(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, predecessor.IPAddr())
 }
 
+// Handles HTTP PUT predecessor request.
+//
+// Example: curl -X PUT -d '127.0.0.1' -v '<ip:port>/node/predecessor'
+func (node *Node) putPredecessor(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+	if len(body) == 0 {
+		node.badRequest(w, "no IP provided in body")
+		return
+	}
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+	node.node.SetPredecessor(chord.NewRemoteNode(ipAddr))
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Handles HTTP GET predecessors request.
 //
 // Example: curl -v '<ip:port>/node/predecessors?id=4'
@@ -169,52 +273,6 @@ func (node *Node) getPredecessors(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, predecessor.IPAddr())
-}
-
-// Handles HTTP PUT successor request.
-//
-// Example: curl -X PUT -d '127.0.0.1' -v '<ip:port>/node/successor'
-func (node *Node) putSuccessor(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		node.internalServerError(w, err)
-		return
-	}
-	if len(body) == 0 {
-		node.badRequest(w, "no IP provided in body")
-		return
-	}
-	addr, err := net.ResolveIPAddr("ip", string(body))
-	if err != nil {
-		node.internalServerError(w, err)
-		return
-	}
-	node.node.SetSuccessor(chord.NewRemoteNode(addr))
-	w.WriteHeader(http.StatusNoContent)
-}
-
-// Handles HTTP PUT predecessor request.
-//
-// Example: curl -X PUT -d '127.0.0.1' -v '<ip:port>/node/predecessor'
-func (node *Node) putPredecessor(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		node.internalServerError(w, err)
-		return
-	}
-	if len(body) == 0 {
-		node.badRequest(w, "no IP provided in body")
-		return
-	}
-	addr, err := net.ResolveIPAddr("ip", string(body))
-	if err != nil {
-		node.internalServerError(w, err)
-		return
-	}
-	node.node.SetPredecessor(chord.NewRemoteNode(addr))
-	w.WriteHeader(http.StatusNoContent)
 }
 
 func (node *Node) notFound(w http.ResponseWriter) {

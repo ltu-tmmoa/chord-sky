@@ -3,23 +3,19 @@ package chord
 import (
 	"fmt"
 	"math/big"
-	"net"
 )
 
-// Finger represents a Chord node finger.
+// Finger represents a Chord node finger interval.
 type Finger struct {
-	interval FingerInterval
-	lazyNode func() Node
+	start ID
+	stop  ID
 }
 
 func newFinger(id ID, i int) *Finger {
-	finger := new(Finger)
-	finger.interval = FingerInterval{
+	return &Finger{
 		start: fingerStart(id, i),
 		stop:  fingerStart(id, i+1),
 	}
-	finger.lazyNode = nil
-	return finger
 }
 
 // (n + 2^(i-1)) mod (2^m)
@@ -49,60 +45,15 @@ func fingerStart(id ID, i int) ID {
 
 // Start yields the Chord node finger[i].start finger ID.
 func (finger *Finger) Start() ID {
-	return finger.interval.start
+	return finger.start
 }
 
-// Interval yields finger[i].start and finger[i + 1].start.
-func (finger *Finger) Interval() *FingerInterval {
-	return &finger.interval
-}
-
-// Node yields Chord node associated with finger.
-func (finger *Finger) Node() Node {
-	return finger.lazyNode()
-}
-
-// SetNode sets known node as finger node.
-func (finger *Finger) SetNode(node Node) {
-	finger.lazyNode = func() Node {
-		return node
-	}
-}
-
-// SetNodeFromIPAddress sets function used to resolve finger node when requested.
-func (finger *Finger) SetNodeFromIPAddress(ipAddr *net.IPAddr) {
-	finger.lazyNode =  func() Node {
-		return NewRemoteNode(ipAddr)
-	}
+// Stop yields the Chord node finger[i + 1].start finger ID.
+func (finger *Finger) Stop() ID {
+	return finger.stop
 }
 
 // String produces a canonical string representation of this Finger.
 func (finger *Finger) String() string {
-	return fmt.Sprintf("Finger{ interval: %v, node: %v }", finger.interval.String(), finger.Node())
-}
-
-// FingerInterval holds two ID:s, representing a [start, stop) range of ID:s.
-type FingerInterval struct {
-	start ID
-	stop  ID
-}
-
-// Start yields the Chord node finger[i].start finger ID.
-func (interval *FingerInterval) Start() ID {
-	return interval.start
-}
-
-// Stop yields the Chord node finger[i + 1].start finger ID.
-func (interval *FingerInterval) Stop() ID {
-	return interval.stop
-}
-
-// Contains determines if given ID is contained within the interval.
-func (interval *FingerInterval) Contains(other ID) bool {
-	return idIntervalContainsIE(interval.start, interval.stop, other)
-}
-
-// String produces a canonical string representation of this Finger.
-func (interval *FingerInterval) String() string {
-	return fmt.Sprintf("[%v, %v)", interval.start, interval.stop)
+	return fmt.Sprintf("[%v, %v)", finger.start, finger.stop)
 }

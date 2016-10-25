@@ -44,11 +44,23 @@ func (node *RemoteNode) IPAddr() *net.IPAddr {
 	return &node.ipAddr
 }
 
-// Finger resolves Chord node at given finger table offset i.
+// Finger resolves provides finger interval at provided offset i.
 //
 // The result is only defined for i in [1,M], where M is the amount of bits set
 // at node ring creation.
 func (node *RemoteNode) Finger(i int) *Finger {
+	m := node.ID().Bits()
+	if 1 > i || i > m {
+		panic(fmt.Sprintf("%d not in [1,%d]", i, m))
+	}
+	return newFinger(node.ID(), i)
+}
+
+// FingerNode resolves Chord node at given finger table offset i.
+//
+// The result is only defined for i in [1,M], where M is the amount of bits set
+// at node ring creation.
+func (node *RemoteNode) FingerNode(i int) (Node, error) {
 	u, err := url.Parse("node/fingers")
 	u.Host = fmt.Sprintf("%s:8080", node.IPAddr().String())
 	u.Scheme = schemeHTTP
@@ -63,17 +75,38 @@ func (node *RemoteNode) Finger(i int) *Finger {
 	resp, err := http.Get(u.String())
 	defer resp.Body.Close()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	addr, err := net.ResolveIPAddr("ip", string(body))
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	finger := newFinger(node.ID(), i)
-	finger.SetNodeFromIPAddress(addr)
-	return finger
+	return NewRemoteNode(ipAddr), nil
+}
+
+// SetFingerNode attempts to set this node's ith finger to given node.
+//
+// The operation is only valid for i in [1,M], where M is the amount of
+// bits set at node ring creation.
+func (node *RemoteNode) SetFingerNode(i int, fing Node) error {
+	u, err := url.Parse(fmt.Sprintf("node/fingers?id=%d", i))
+	u.Host = fmt.Sprintf("%s:8080", node.IPAddr().String())
+	u.Scheme = schemeHTTP
+	if err != nil {
+		log.Logger.Fatal(err)
+	}
+
+	body := strings.NewReader(fing.IPAddr().IP.String())
+	req, err := http.NewRequest(http.MethodPut, u.String(), body)
+	if err != nil {
+		return err
+	}
+
+	res, err := (&http.Client{}).Do(req)
+	defer res.Body.Close()
+	return err
 }
 
 // Successor yields the next node in this node's ring.
@@ -92,12 +125,11 @@ func (node *RemoteNode) Successor() (Node, error) {
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	addr, err := net.ResolveIPAddr("ip", string(body))
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
 	}
-
-	return NewRemoteNode(addr), nil
+	return NewRemoteNode(ipAddr), nil
 }
 
 // Predecessor yields the previous node in this node's ring.
@@ -116,12 +148,11 @@ func (node *RemoteNode) Predecessor() (Node, error) {
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	addr, err := net.ResolveIPAddr("ip", string(body))
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
 	}
-
-	return NewRemoteNode(addr), nil
+	return NewRemoteNode(ipAddr), nil
 }
 
 // FindSuccessor asks this node to find successor of given ID.
@@ -144,12 +175,12 @@ func (node *RemoteNode) FindSuccessor(id ID) (Node, error) {
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	addr, err := net.ResolveIPAddr("ip", string(body))
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRemoteNode(addr), nil
+	return NewRemoteNode(ipAddr), nil
 }
 
 // FindPredecessor asks this node to find a predecessor of given ID.
@@ -172,12 +203,12 @@ func (node *RemoteNode) FindPredecessor(id ID) (Node, error) {
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
-	addr, err := net.ResolveIPAddr("ip", string(body))
+	ipAddr, err := net.ResolveIPAddr("ip", string(body))
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRemoteNode(addr), nil
+	return NewRemoteNode(ipAddr), nil
 }
 
 // SetSuccessor attempts to set this node's successor to given node.
