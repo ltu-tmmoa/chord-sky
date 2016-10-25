@@ -3,7 +3,6 @@ package chord
 import (
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"net"
 	"net/http"
 	"net/url"
@@ -35,37 +34,9 @@ func newRemoteNode(ipAddr *net.IPAddr, id *Hash) *RemoteNode {
 	return node
 }
 
-// BigInt turns Node ID into big.Int representation.
-func (node *RemoteNode) BigInt() *big.Int {
-	return node.id.BigInt()
-}
-
-// Bits returns amount of significant bits in Node ID.
-func (node *RemoteNode) Bits() int {
-	return node.id.Bits()
-}
-
-// Cmp compares ID of this Node with given ID.
-//
-// Returns -1, 0 or 1 depending on if given other ID is lesser than, equal
-// to, or greater than this Node's ID.
-func (node *RemoteNode) Cmp(other ID) int {
-	return node.id.Cmp(other)
-}
-
-// Diff calculates the difference between this Node's ID and given other ID.
-func (node *RemoteNode) Diff(other ID) ID {
-	return node.id.Diff(other)
-}
-
-// Eq determines if this Node's ID and given other ID are equal.
-func (node *RemoteNode) Eq(other ID) bool {
-	return node.id.Eq(other)
-}
-
-// Hash turns this Node's ID into Hash representation.
-func (node *RemoteNode) Hash() Hash {
-	return node.id.Hash()
+// ID returns node ID.
+func (node *RemoteNode) ID() ID {
+	return &node.id
 }
 
 // IPAddr provides node network address.
@@ -100,7 +71,7 @@ func (node *RemoteNode) Finger(i int) *Finger {
 	if err != nil {
 		return nil
 	}
-	finger := newFinger(node, i)
+	finger := newFinger(node.ID(), i)
 	finger.SetNodeFromIPAddress(addr)
 	return finger
 }

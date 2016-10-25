@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"math/rand"
 	"net"
+	"sync"
 )
 
 // LocalNode represents a potential member of a Chord ring.
@@ -13,6 +14,7 @@ type LocalNode struct {
 	id          Hash
 	fingers     []*Finger
 	predecessor Node
+	mutex       sync.RWMutex
 }
 
 // NewLocalNode creates a new local node from given address, which ought to be the application's public-facing IP
@@ -35,34 +37,9 @@ func newLocalNode(ipAddr *net.IPAddr, id *Hash) *LocalNode {
 	return node
 }
 
-// BigInt returns node identifier as a big.Int.
-func (node *LocalNode) BigInt() *big.Int {
-	return node.id.BigInt()
-}
-
-// Bits returns amount of significant bits in node identifier.
-func (node *LocalNode) Bits() int {
-	return node.id.Bits()
-}
-
-// Cmp compares this node's identifier to given ID.
-func (node *LocalNode) Cmp(other ID) int {
-	return node.id.Cmp(other)
-}
-
-// Diff calculates the difference between this node's identifier and given ID.
-func (node *LocalNode) Diff(other ID) ID {
-	return node.id.Diff(other)
-}
-
-// Eq determines if this node's identifier and given ID are equal.
-func (node *LocalNode) Eq(other ID) bool {
-	return node.id.Eq(other)
-}
-
-// Hash turns ID into Hash representation.
-func (node *LocalNode) Hash() Hash {
-	return node.id.Hash()
+// ID returns node ID.
+func (node *LocalNode) ID() ID {
+	return &node.id
 }
 
 // IPAddr provides node network IP address.
@@ -75,6 +52,9 @@ func (node *LocalNode) IPAddr() *net.IPAddr {
 // The result is only defined for i in [1,M], where M is the amount of bits set
 // at node ring creation.
 func (node *LocalNode) Finger(i int) *Finger {
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
 	if 1 > i || i > node.id.bits {
 		panic(fmt.Sprintf("%d not in [1,%d]", i, node.id.bits))
 	}
@@ -85,31 +65,74 @@ func (node *LocalNode) finger(i int) *Finger {
 	return node.fingers[i-1]
 }
 
+func unsafeFinger(node Node, i int) *Finger {
+	switch n := node.(type) {
+	case *LocalNode:
+		return n.finger(i)
+	default:
+		return n.Finger(i)
+	}
+}
+
 // Successor yields the next node in this node's ring.
 func (node *LocalNode) Successor() (Node, error) {
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
 	return node.finger(1).Node(), nil
+}
+
+func successor(node Node) (Node, error) {
+	switch n := node.(type) {
+	case *LocalNode:
+		return n.finger(1).Node(), nil
+	default:
+		return node.Finger(1).Node(), nil
+	}
 }
 
 // Predecessor yields the previous node in this node's ring.
 func (node *LocalNode) Predecessor() (Node, error) {
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
 	return node.predecessor, nil
+}
+
+func predecessor(node Node) (Node, error) {
+	switch n := node.(type) {
+	case *LocalNode:
+		return n.predecessor, nil
+	default:
+		return n.Predecessor()
+	}
 }
 
 // FindSuccessor asks this node to find successor of given ID.
 //
 // See Chord paper figure 4.
 func (node *LocalNode) FindSuccessor(id ID) (Node, error) {
-	node0, err := node.FindPredecessor(id)
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
+	return findSuccessor(node, id)
+}
+
+func findSuccessor(node Node, id ID) (Node, error) {
+	node0, err := findPredecessor(node, id)
 	if err != nil {
 		return nil, err
 	}
-	return node0.Successor()
+	return successor(node0)
 }
 
 // FindPredecessor asks node to find id's predecessor.
 //
 // See Chord paper figure 4.
 func (node *LocalNode) FindPredecessor(id ID) (Node, error) {
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
 	return findPredecessor(node, id)
 }
 
@@ -119,11 +142,11 @@ func (node *LocalNode) FindPredecessor(id ID) (Node, error) {
 func findPredecessor(n Node, id ID) (Node, error) {
 	n0 := n
 	for {
-		successor, err := n0.Successor()
+		succ, err := successor(n0)
 		if err != nil {
 			return nil, err
 		}
-		if idIntervalContainsEI(n0, successor, id) {
+		if idIntervalContainsEI(n0.ID(), succ.ID(), id) {
 			return n0, nil
 		}
 		n0, err = closestPrecedingFinger(n0, id)
@@ -137,8 +160,8 @@ func findPredecessor(n Node, id ID) (Node, error) {
 //
 // See Chord paper figure 4.
 func closestPrecedingFinger(n Node, id ID) (Node, error) {
-	for i := n.Bits(); i > 0; i-- {
-		if f := n.Finger(i).Node(); idIntervalContainsEE(n, id, f) {
+	for i := n.ID().Bits(); i > 0; i-- {
+		if f := unsafeFinger(n, i).Node(); idIntervalContainsEE(n.ID(), id, f.ID()) {
 			return f, nil
 		}
 	}
@@ -146,30 +169,56 @@ func closestPrecedingFinger(n Node, id ID) (Node, error) {
 }
 
 // SetSuccessor attempts to set this node's successor to given node.
-func (node *LocalNode) SetSuccessor(successor Node) error {
-	node.finger(1).SetNode(successor)
+func (node *LocalNode) SetSuccessor(succ Node) error {
+	node.mutex.Lock()
+	defer node.mutex.Unlock()
+
+	node.finger(1).SetNode(succ)
 	return nil
 }
 
+func setSuccessor(node, succ Node) error {
+	switch n := node.(type) {
+	case *LocalNode:
+		n.finger(1).SetNode(succ)
+		return nil
+	default:
+		return n.SetSuccessor(succ)
+	}
+}
+
 // SetPredecessor attempts to set this node's predecessor to given node.
-func (node *LocalNode) SetPredecessor(predecessor Node) error {
-	node.predecessor = predecessor
+func (node *LocalNode) SetPredecessor(pred Node) error {
+	node.mutex.Lock()
+	defer node.mutex.Unlock()
+
+	node.predecessor = pred
 	return nil
+}
+
+func setPredecessor(node, pred Node) error {
+	switch n := node.(type) {
+	case *LocalNode:
+		n.predecessor = pred
+		return nil
+	default:
+		return n.SetPredecessor(pred)
+	}
 }
 
 // Join makes this node join the ring of given other node.
 //
 // If given node is nil, this node will form its own ring.
 func (node *LocalNode) Join(node0 Node) {
+	node.mutex.Lock()
+	defer node.mutex.Unlock()
+
 	if node0 != nil {
-		if node.Bits() != node0.Bits() {
-			node.id = *hash(node.ipAddr, node0.Bits())
-		}
 		node.initFingerTable(node0)
 		updateOthers(node)
 		// TODO: Move keys in (predecessor,n] from successor
 	} else {
-		m := node.Bits()
+		m := node.id.Bits()
 		for i := 1; i <= m; i++ {
 			node.finger(i).SetNode(node)
 		}
@@ -181,20 +230,20 @@ func (node *LocalNode) Join(node0 Node) {
 //
 // See Chord paper figure 6.
 func updateOthers(n Node) error {
-	m := n.Bits()
+	m := n.ID().Bits()
 	for i := 2; i <= m; i++ {
 		var id ID
 		{
-			subtrahend := big.Int{}
-			subtrahend.SetInt64(2)
-			subtrahend.Exp(&subtrahend, big.NewInt(int64(i-1)), nil)
-			id = n.Diff(newHash(subtrahend, m))
+			subt := big.Int{}
+			subt.SetInt64(2)
+			subt.Exp(&subt, big.NewInt(int64(i-1)), nil)
+			id = n.ID().Diff(newHash(subt, m))
 		}
-		predecessor, err := n.FindPredecessor(id)
+		pred, err := findPredecessor(n, id)
 		if err != nil {
 			return err
 		}
-		err = updateFingerTable(predecessor, n, i)
+		err = unsafeUpdateFingerTable(pred, n, i)
 		if err != nil {
 			return err
 		}
@@ -205,15 +254,15 @@ func updateOthers(n Node) error {
 // If s is the i:th finger of node, update node's finger table with s.
 //
 // See Chord paper figure 6.
-func updateFingerTable(n, s Node, i int) error {
-	finger := n.Finger(i)
-	if idIntervalContainsIE(finger.Start(), finger.Node(), s) {
-		finger.SetNode(s)
-		predecessor, err := n.Predecessor()
+func unsafeUpdateFingerTable(n, s Node, i int) error {
+	fing := unsafeFinger(n, i)
+	if idIntervalContainsIE(fing.Start(), fing.Node().ID(), s.ID()) {
+		fing.SetNode(s)
+		pred, err := predecessor(n)
 		if err != nil {
 			return err
 		}
-		updateFingerTable(predecessor, s, i)
+		unsafeUpdateFingerTable(pred, s, i)
 	}
 	return nil
 }
@@ -226,39 +275,39 @@ func (node *LocalNode) initFingerTable(node0 Node) error {
 	var err error
 	// Add this node to node0 node's ring.
 	{
-		var successor Node
-		var predecessor Node
+		var succ Node
+		var pred Node
 
-		successor, err = node0.FindSuccessor(node.finger(1).Start())
+		succ, err = findSuccessor(node0, node.finger(1).Start())
 		if err != nil {
 			return err
 		}
-		predecessor, err = successor.Predecessor()
+		pred, err = predecessor(succ)
 		if err != nil {
 			return err
 		}
 
-		node.SetSuccessor(successor)
-		node.SetPredecessor(predecessor)
+		setSuccessor(node, succ)
+		setPredecessor(node, pred)
 
-		if err = predecessor.SetSuccessor(node); err != nil {
+		if err = setSuccessor(pred, node); err != nil {
 			return err
 		}
-		if err = successor.SetPredecessor(node); err != nil {
+		if err = setPredecessor(succ, node); err != nil {
 			return err
 		}
 	}
 	// Update this node's finger table.
 	{
-		m := node.Bits()
+		m := node.id.Bits()
 		for i := 1; i < m; i++ {
 			this := node.finger(i)
 			next := node.finger(i + 1)
 			var nextNode Node
-			if idIntervalContainsIE(node, this.Node(), next.Start()) {
+			if idIntervalContainsIE(node.ID(), this.Node().ID(), next.Start()) {
 				nextNode = this.Node()
 			} else {
-				nextNode, err = node0.FindSuccessor(next.Start())
+				nextNode, err = findSuccessor(node0, next.Start())
 			}
 			if err != nil {
 				return err
@@ -273,33 +322,30 @@ func (node *LocalNode) initFingerTable(node0 Node) error {
 //
 // Recommended to be called periodically in order to ensure node data integrity.
 func (node *LocalNode) Stabilize() error {
-	successor, err := node.Successor()
+	node.mutex.Lock()
+	defer node.mutex.Unlock()
+
+	succ := node.finger(1).Node()
+	x, err := predecessor(succ)
 	if err != nil {
 		return err
 	}
-	x, err := successor.Predecessor()
-	if err != nil {
-		return err
-	}
-	if idIntervalContainsEE(node, successor, x) {
-		if err = node.SetSuccessor(x); err != nil {
+	if idIntervalContainsEE(node.ID(), succ.ID(), x.ID()) {
+		if err = setSuccessor(node, x); err != nil {
 			return err
 		}
 	}
-	successor, err = node.Successor()
-	if err != nil {
-		return err
-	}
-	return notify(successor, node)
+	succ = node.finger(1).Node()
+	return notify(succ, node)
 }
 
 func notify(n, n0 Node) error {
-	predecessor, err := n.Predecessor()
+	pred, err := predecessor(n)
 	if err != nil {
 		return nil
 	}
-	if predecessor == nil || idIntervalContainsEE(predecessor, n, n0) {
-		return n.SetPredecessor(n0)
+	if pred == nil || idIntervalContainsEE(pred.ID(), n.ID(), n0.ID()) {
+		return setPredecessor(n, n0)
 	}
 	return nil
 }
@@ -308,17 +354,23 @@ func notify(n, n0 Node) error {
 //
 // Recommended to be called periodically in order to ensure finger table integrity.
 func (node *LocalNode) FixRandomFinger() error {
+	node.mutex.Lock()
+	defer node.mutex.Unlock()
+
 	i := rand.Int() % len(node.fingers)
 	finger := node.fingers[i]
-	fingerNode, err := node.FindSuccessor(finger.Start())
+	fingerNode, err := findSuccessor(node, finger.Start())
 	finger.SetNode(fingerNode)
 	return err
 }
 
 // FixAllFingers refreshes all of this node's finger table entries.
 func (node *LocalNode) FixAllFingers() error {
+	node.mutex.Lock()
+	defer node.mutex.Unlock()
+
 	for _, finger := range node.fingers {
-		fingerNode, err := node.FindSuccessor(finger.Start())
+		fingerNode, err := findSuccessor(node, finger.Start())
 		if err != nil {
 			return err
 		}
@@ -329,15 +381,18 @@ func (node *LocalNode) FixAllFingers() error {
 
 // PrintRing outputs this node's ring to console.
 func (node *LocalNode) PrintRing() {
-	fmt.Printf("Node %v ring: %v", node.String(), node.String())
-	successor, err := node.Successor()
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
+	fmt.Printf("Node %v ring:", node.id.String())
+	succ, err := successor(node)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	for !node.Eq(successor) {
-		fmt.Printf(" => %v", successor.String())
-		successor, err = successor.Successor()
+	for !node.ID().Eq(succ.ID()) {
+		fmt.Printf(" => %v", succ)
+		succ, err = successor(node)
 		if err != nil {
 			fmt.Printf(" (%v)", err)
 			return

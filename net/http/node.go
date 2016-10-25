@@ -7,22 +7,19 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/ltu-tmmoa/chord-sky/chord"
 )
 
 // Node is used to expose Chord Node operations via RPC.
 type Node struct {
-	node  chord.Node
-	mutex *sync.RWMutex
+	node chord.Node
 }
 
-// NewNode creates a new public node, wrapping given regular node, synchronizing it using provided mutex.
-func NewNode(node chord.Node, mutex *sync.RWMutex) *Node {
+// NewNode creates a new public node, wrapping given regular node.
+func NewNode(node chord.Node) *Node {
 	httpNode := new(Node)
 	httpNode.node = node
-	httpNode.mutex = mutex
 	return httpNode
 }
 
@@ -84,9 +81,7 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (node *Node) getInfo(w http.ResponseWriter, r *http.Request) {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-	bits := node.node.Bits()
+	bits := node.node.ID().Bits()
 	var buffer bytes.Buffer
 	var finger *chord.Finger
 	for i := 1; i <= bits; i++ {
@@ -102,9 +97,6 @@ func (node *Node) getInfo(w http.ResponseWriter, r *http.Request) {
 //
 // Example: curl -v '<ip:port>/node/fingers?id=2'
 func (node *Node) getFingers(w http.ResponseWriter, r *http.Request) {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-
 	id := r.URL.Query().Get("id")
 	if len(id) == 0 {
 		node.badRequest(w, "id param not provided")
@@ -121,9 +113,6 @@ func (node *Node) getFingers(w http.ResponseWriter, r *http.Request) {
 //
 // Example: curl -v '<ip:port>/node/successor'
 func (node *Node) getSuccessor(w http.ResponseWriter, r *http.Request) {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-
 	successor, err := node.node.Successor()
 	if err != nil {
 		node.internalServerError(w, err)
@@ -137,9 +126,6 @@ func (node *Node) getSuccessor(w http.ResponseWriter, r *http.Request) {
 //
 // Example: curl -v '<ip:port>/node/successors?id=1'
 func (node *Node) getSuccessors(w http.ResponseWriter, r *http.Request) {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-
 	id := r.URL.Query().Get("id")
 	if len(id) == 0 {
 		node.badRequest(w, "id param not provided")
@@ -158,9 +144,6 @@ func (node *Node) getSuccessors(w http.ResponseWriter, r *http.Request) {
 //
 // Example: curl -v '<ip:port>/node/predecessor'
 func (node *Node) getPredecessor(w http.ResponseWriter, r *http.Request) {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-
 	predecessor, err := node.node.Predecessor()
 	if err != nil {
 		node.internalServerError(w, err)
@@ -174,9 +157,6 @@ func (node *Node) getPredecessor(w http.ResponseWriter, r *http.Request) {
 //
 // Example: curl -v '<ip:port>/node/predecessors?id=4'
 func (node *Node) getPredecessors(w http.ResponseWriter, r *http.Request) {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-
 	id := r.URL.Query().Get("id")
 	if len(id) == 0 {
 		node.badRequest(w, "id param not provided")
@@ -195,9 +175,6 @@ func (node *Node) getPredecessors(w http.ResponseWriter, r *http.Request) {
 //
 // Example: curl -X PUT -d '127.0.0.1' -v '<ip:port>/node/successor'
 func (node *Node) putSuccessor(w http.ResponseWriter, r *http.Request) {
-	node.mutex.Lock()
-	defer node.mutex.Unlock()
-
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -221,9 +198,6 @@ func (node *Node) putSuccessor(w http.ResponseWriter, r *http.Request) {
 //
 // Example: curl -X PUT -d '127.0.0.1' -v '<ip:port>/node/predecessor'
 func (node *Node) putPredecessor(w http.ResponseWriter, r *http.Request) {
-	node.mutex.Lock()
-	defer node.mutex.Unlock()
-
 	defer r.Body.Close()
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {

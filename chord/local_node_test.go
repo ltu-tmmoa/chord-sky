@@ -184,12 +184,12 @@ func prepareNodes(ids ...int64) []*LocalNode {
 
 func prepareNodeFingerTests(t *testing.T, node *LocalNode) (func(int64), func(int, int64)) {
 	expectPredecessorID := func(predecessorID int64) {
-		if n := node.predecessor; !n.Eq(newHash64(predecessorID, M3)) {
+		if n := node.predecessor; !n.ID().Eq(newHash64(predecessorID, M3)) {
 			t.Errorf("{%v}.predecessor expected to be %v, was %v", node, predecessorID, n)
 		}
 	}
 	expectFingerNodeID := func(finger int, nodeID int64) {
-		if n := node.Finger(finger).Node(); !n.Eq(newHash64(nodeID, M3)) {
+		if n := node.Finger(finger).Node(); !n.ID().Eq(newHash64(nodeID, M3)) {
 			t.Errorf("{%v}.finger(%v).node expected to be %v, was %v.", node, finger, nodeID, n)
 		}
 	}

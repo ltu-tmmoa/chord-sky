@@ -1,32 +1,11 @@
 package chord
 
-import (
-	"math/big"
-	"net"
-)
+import "net"
 
 // Node represents some Chord node, available either locally or remotely.
 type Node interface {
-	// BigInt turns Node ID into big.Int representation.
-	BigInt() *big.Int
-
-	// Bits returns amount of significant bits in Node ID.
-	Bits() int
-
-	// Cmp compares ID of this Node with given ID.
-	//
-	// Returns -1, 0 or 1 depending on if given other ID is lesser than, equal
-	// to, or greater than this Node's ID.
-	Cmp(other ID) int
-
-	// Diff calculates the difference between this Node's ID and given other ID.
-	Diff(other ID) ID
-
-	// Eq determines if this Node's ID and given other ID are equal.
-	Eq(other ID) bool
-
-	// Hash turns this Node's ID into Hash representation.
-	Hash() Hash
+	// ID returns node ID.
+	ID() ID
 
 	// IPAddr provides node network address.
 	IPAddr() *net.IPAddr
@@ -57,8 +36,4 @@ type Node interface {
 
 	// String turns Node into its canonical string representation.
 	String() string
-
-	// PrintRing a String represent the Node's ring
-	// PrintRing() string
-
 }

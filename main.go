@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/ltu-tmmoa/chord-sky/chord"
@@ -16,11 +15,12 @@ import (
 )
 
 var peer string
+
 //var ip string
 
 func init() {
 	flag.StringVar(&peer, "peer", "", "<IP:PORT> of Chord Sky Node to join. If not given a new ring is created.")
-	  //flag.StringVar(&ip, "ip", "", "prefered interface")
+	//flag.StringVar(&ip, "ip", "", "prefered interface")
 }
 
 func main() {
@@ -47,11 +47,9 @@ func main() {
 			localNode.Join(nil)
 
 		} else {
-			  log.Logger.Println("Joining ring via", trimmedPeer, "...")
+			log.Logger.Println("Joining ring via", trimmedPeer, "...")
 
-			  //log.Logger.Println("Joining ring via", "172.17.0.2", "...")
-			  //ipAddr, err := net.ResolveIPAddr("ip", "172.17.0.2")
-			  ipAddr, err := net.ResolveIPAddr("ip", trimmedPeer)
+			ipAddr, err := net.ResolveIPAddr("ip", trimmedPeer)
 			if err != nil {
 				log.Logger.Fatalln(err)
 			}
@@ -59,17 +57,12 @@ func main() {
 		}
 	}
 
-	localNodeMutex := &sync.RWMutex{}
-
 	// Schedule recurring operations.
 	go func() {
 		time.Sleep(10 * time.Second)
 		for {
 			func() {
 				// TODO: Heartbeat?
-
-				localNodeMutex.Lock()
-				defer localNodeMutex.Unlock()
 
 				log.Logger.Println("Stabilizing ...")
 				localNode.Stabilize()
@@ -83,7 +76,7 @@ func main() {
 
 	// Expose local node as HTTP RPC service.
 	{
-		httpNode := chttp.NewNode(localNode, localNodeMutex)
+		httpNode := chttp.NewNode(localNode)
 		http.Handle("/", httpNode)
 
 		localAddr := fmt.Sprintf("%s:8080", localNode.IPAddr().String())
