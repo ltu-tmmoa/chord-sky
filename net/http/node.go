@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/ltu-tmmoa/chord-sky/chord"
+	"github.com/ltu-tmmoa/chord-sky/log"
 )
 
 // Node is used to expose Chord Node operations via RPC.
@@ -32,60 +33,53 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	log.Logger.Printf("Incoming request: %s %s", r.Method, r.URL.String())
+
 	switch r.URL.Path {
 	case "/node/info":
 		switch r.Method {
 		case http.MethodGet:
 			node.getInfo(w, r)
-			fmt.Println("Got get info")
 			return
 		}
 	case "/node/fingers":
 		switch r.Method {
 		case http.MethodGet:
 			node.getFingers(w, r)
-			fmt.Println("Got get fingers")
 			return
 
 		case http.MethodPut:
 			node.putFingers(w, r)
-			fmt.Println("Got put fingers")
 			return
 		}
 	case "/node/successor":
 		switch r.Method {
 		case http.MethodGet:
 			node.getSuccessor(w, r)
-			fmt.Println("Got get successor")
 			return
 		case http.MethodPut:
 			node.putSuccessor(w, r)
-			fmt.Println("Got put successor")
 			return
 		}
 	case "/node/successors":
 		switch r.Method {
 		case http.MethodGet:
 			node.getSuccessors(w, r)
-			fmt.Println("Got get successors")
 			return
 		}
 	case "/node/predecessor":
 		switch r.Method {
 		case http.MethodGet:
 			node.getPredecessor(w, r)
-			fmt.Println("Got get predecessor")
 			return
 		case http.MethodPut:
 			node.putPredecessor(w, r)
-			fmt.Println("Got put predecessor")
 			return
 		}
 	case "/node/predecessors":
 		switch r.Method {
 		case http.MethodGet:
 			node.getPredecessors(w, r)
-			fmt.Println("Got Get predecessors")
 			return
 		}
 	}
