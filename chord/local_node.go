@@ -416,6 +416,12 @@ func (node *LocalNode) FixAllFingers() error {
 	return nil
 }
 
+// Heartbeat sends heartbeat messages to connected peers in order to make sure
+// that connections are healthy.
+func (node *LocalNode) Heartbeat() {
+
+}
+
 // PrintRing outputs this node's ring to console.
 func (node *LocalNode) PrintRing() {
 	node.mutex.RLock()

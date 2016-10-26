@@ -62,7 +62,8 @@ func main() {
 		time.Sleep(10 * time.Second)
 		for {
 			func() {
-				// TODO: Heartbeat?
+				log.Logger.Println("Sending heartbeats ...")
+				localNode.Heartbeat()
 
 				log.Logger.Println("Stabilizing ...")
 				localNode.Stabilize()
