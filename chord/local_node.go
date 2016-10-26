@@ -9,10 +9,6 @@ import (
 )
 
 // LocalNode represents a potential member of a Chord ring.
-//
-// All public methods, except those accessing immutable properties, are locked.
-// This means that calling another public method from within a public method
-// may cause a deadlock.
 type LocalNode struct {
 	ipAddr      net.IPAddr
 	id          ID
@@ -341,8 +337,8 @@ func (node *LocalNode) initFingerTable(node0 Node) error {
 			return err
 		}
 
-		setSuccessor(node, succ)
-		setPredecessor(node, pred)
+		node.fingerNodes[0] = succ
+		node.predecessor = pred
 
 		if err = setSuccessor(pred, node); err != nil {
 			return err
