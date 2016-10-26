@@ -169,7 +169,7 @@ func (node *Node) getFingers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, finger.IPAddr())
+	fmt.Fprint(w, finger.TCPAddr())
 }
 
 // Handles HTTP PUT fingers request.
@@ -186,7 +186,7 @@ func (node *Node) putFingers(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, "no IP provided in body")
 		return
 	}
-	ipAddr, err := net.ResolveIPAddr("ip", string(body))
+	tcpAddr, err := net.ResolveTCPAddr("ip", string(body))
 	if err != nil {
 		node.internalServerError(w, err)
 		return
@@ -201,7 +201,7 @@ func (node *Node) putFingers(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, err.Error())
 		return
 	}
-	node.node.SetFingerNode(index, chord.NewRemoteNode(ipAddr))
+	node.node.SetFingerNode(index, chord.NewRemoteNode(tcpAddr))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -215,7 +215,7 @@ func (node *Node) getSuccessor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, successor.IPAddr())
+	fmt.Fprint(w, successor.TCPAddr())
 }
 
 // Handles HTTP PUT successor request.
@@ -232,12 +232,12 @@ func (node *Node) putSuccessor(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, "no IP provided in body")
 		return
 	}
-	ipAddr, err := net.ResolveIPAddr("ip", string(body))
+	tcpAddr, err := net.ResolveTCPAddr("ip", string(body))
 	if err != nil {
 		node.internalServerError(w, err)
 		return
 	}
-	node.node.SetSuccessor(chord.NewRemoteNode(ipAddr))
+	node.node.SetSuccessor(chord.NewRemoteNode(tcpAddr))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -256,7 +256,7 @@ func (node *Node) getSuccessors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, successor.IPAddr())
+	fmt.Fprint(w, successor.TCPAddr())
 }
 
 // Handles HTTP GET predecessor request.
@@ -269,7 +269,7 @@ func (node *Node) getPredecessor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, predecessor.IPAddr())
+	fmt.Fprint(w, predecessor.TCPAddr())
 }
 
 // Handles HTTP PUT predecessor request.
@@ -286,12 +286,12 @@ func (node *Node) putPredecessor(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, "no IP provided in body")
 		return
 	}
-	ipAddr, err := net.ResolveIPAddr("ip", string(body))
+	tcpAddr, err := net.ResolveTCPAddr("ip", string(body))
 	if err != nil {
 		node.internalServerError(w, err)
 		return
 	}
-	node.node.SetPredecessor(chord.NewRemoteNode(ipAddr))
+	node.node.SetPredecessor(chord.NewRemoteNode(tcpAddr))
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -310,7 +310,7 @@ func (node *Node) getPredecessors(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, predecessor.IPAddr())
+	fmt.Fprint(w, predecessor.TCPAddr())
 }
 
 func (node *Node) notFound(w http.ResponseWriter) {

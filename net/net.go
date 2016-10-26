@@ -5,8 +5,8 @@ import (
 	"net"
 )
 
-// GetLocalIPAddr returns a local non-loopback network address.
-func GetLocalIPAddr() (*net.IPAddr, error) {
+// GetLocalTCPAddr returns a local non-loopback network address.
+func GetLocalTCPAddr(port int) (*net.TCPAddr, error) {
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		return nil, err
@@ -20,7 +20,10 @@ func GetLocalIPAddr() (*net.IPAddr, error) {
 		})
 	}
 	if ipNet != nil {
-		return net.ResolveIPAddr("ip", ipNet.IP.String())
+		return &net.TCPAddr{
+			IP:   ipNet.IP,
+			Port: port,
+		}, nil
 	}
 	return nil, errors.New("No suitable IP interface available.")
 }

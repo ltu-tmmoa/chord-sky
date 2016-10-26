@@ -1,15 +1,16 @@
 package chord
 
 import (
-	"fmt"
 	"math/big"
 	"net"
 	"testing"
 )
 
-func fakeAddr(id int64) *net.IPAddr {
-	ipAddr, _ := net.ResolveIPAddr("ip4", fmt.Sprintf("192.168.1.%d", id+1))
-	return ipAddr
+func fakeAddr(id byte) *net.TCPAddr {
+	return &net.TCPAddr{
+		IP:   []byte{192, 168, 1, id},
+		Port: 8080,
+	}
 }
 
 func newID64(value int64, bits int) *ID {

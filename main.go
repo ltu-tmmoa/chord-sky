@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -15,12 +14,11 @@ import (
 )
 
 var peer string
-
-//var ip string
+var port int
 
 func init() {
 	flag.StringVar(&peer, "peer", "", "<IP:PORT> of Chord Sky Node to join. If not given a new ring is created.")
-	//flag.StringVar(&ip, "ip", "", "prefered interface")
+	flag.IntVar(&port, "port", 8080, "Network port number to use for receiving incoming connections.")
 }
 
 func main() {
@@ -31,11 +29,11 @@ func main() {
 	// Setup chord node representing this machine.
 	var localNode *chord.LocalNode
 	{
-		localIPAddr, err := cnet.GetLocalIPAddr()
+		localTCPAddr, err := cnet.GetLocalTCPAddr(port)
 		if err != nil {
 			log.Logger.Fatalln(err)
 		}
-		localNode = chord.NewLocalNode(localIPAddr)
+		localNode = chord.NewLocalNode(localTCPAddr)
 	}
 
 	// Join new or existing Chord ring.
@@ -49,11 +47,11 @@ func main() {
 		} else {
 			log.Logger.Println("Joining ring via", trimmedPeer, "...")
 
-			ipAddr, err := net.ResolveIPAddr("ip", trimmedPeer)
+			tcpAddr, err := net.ResolveTCPAddr("ip", trimmedPeer)
 			if err != nil {
 				log.Logger.Fatalln(err)
 			}
-			localNode.Join(chord.NewRemoteNode(ipAddr))
+			localNode.Join(chord.NewRemoteNode(tcpAddr))
 		}
 	}
 
@@ -80,7 +78,7 @@ func main() {
 		httpNode := chttp.NewNode(localNode)
 		http.Handle("/", httpNode)
 
-		localAddr := fmt.Sprintf("%s:8080", localNode.IPAddr().String())
+		localAddr := localNode.TCPAddr().String()
 		log.Logger.Println("Listening on", localAddr, "...")
 		log.Logger.Fatal(http.ListenAndServe(localAddr, nil))
 	}

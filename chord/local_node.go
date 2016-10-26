@@ -10,7 +10,7 @@ import (
 
 // LocalNode represents a potential member of a Chord ring.
 type LocalNode struct {
-	ipAddr      net.IPAddr
+	tcpAddr      net.TCPAddr
 	id          ID
 	fingerTable FingerTable
 	predecessor Node
@@ -19,13 +19,13 @@ type LocalNode struct {
 
 // NewLocalNode creates a new local node from given address, which ought to be the application's public-facing IP
 // address.
-func NewLocalNode(ipAddr *net.IPAddr) *LocalNode {
-	return newLocalNode(ipAddr, identity(ipAddr, HashBitsMax))
+func NewLocalNode(tcpAddr *net.TCPAddr) *LocalNode {
+	return newLocalNode(tcpAddr, identity(tcpAddr, HashBitsMax))
 }
 
-func newLocalNode(ipAddr *net.IPAddr, id *ID) *LocalNode {
+func newLocalNode(tcpAddr *net.TCPAddr, id *ID) *LocalNode {
 	return &LocalNode{
-		ipAddr:      *ipAddr,
+		tcpAddr:      *tcpAddr,
 		id:          *id,
 		fingerTable: newFingerTable(id),
 	}
@@ -36,9 +36,9 @@ func (node *LocalNode) ID() *ID {
 	return &node.id
 }
 
-// IPAddr provides node network IP address.
-func (node *LocalNode) IPAddr() *net.IPAddr {
-	return &node.ipAddr
+// TCPAddr provides node network IP address.
+func (node *LocalNode) TCPAddr() *net.TCPAddr {
+	return &node.tcpAddr
 }
 
 // FingerStart resolves start ID of finger table entry i.
@@ -446,5 +446,5 @@ func (node *LocalNode) PrintRing() {
 
 // String produces canonical string representation of this node.
 func (node *LocalNode) String() string {
-	return fmt.Sprintf("%s %s", node.id.String(), node.ipAddr.String())
+	return fmt.Sprintf("%s %s", node.id.String(), node.tcpAddr.String())
 }

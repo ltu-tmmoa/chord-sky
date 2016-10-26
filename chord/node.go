@@ -7,8 +7,8 @@ type Node interface {
 	// ID returns node ID.
 	ID() *ID
 
-	// IPAddr provides node network address.
-	IPAddr() *net.IPAddr
+	// TCPAddr provides node network address.
+	TCPAddr() *net.TCPAddr
 
 	// FingerStart resolves start ID of finger table entry i.
 	//

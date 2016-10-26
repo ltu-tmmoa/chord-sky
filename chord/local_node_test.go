@@ -177,7 +177,7 @@ func TestNodeJoin8(t *testing.T) {
 func prepareNodes(ids ...int64) []*LocalNode {
 	nodes := make([]*LocalNode, len(ids))
 	for i, s := range ids {
-		nodes[i] = newLocalNode(fakeAddr(s), newID64(s, M3))
+		nodes[i] = newLocalNode(fakeAddr(byte(s)), newID64(s, M3))
 	}
 	return nodes
 }
