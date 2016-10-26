@@ -44,16 +44,14 @@ func (node *RemoteNode) IPAddr() *net.IPAddr {
 	return &node.ipAddr
 }
 
-// Finger resolves provides finger interval at provided offset i.
+// FingerStart resolves start ID of finger table entry i.
 //
 // The result is only defined for i in [1,M], where M is the amount of bits set
 // at node ring creation.
-func (node *RemoteNode) Finger(i int) *Finger {
+func (node *RemoteNode) FingerStart(i int) *ID {
 	m := node.ID().Bits()
-	if 1 > i || i > m {
-		panic(fmt.Sprintf("%d not in [1,%d]", i, m))
-	}
-	return newFinger(node.ID(), i)
+	verifyIndexOrPanic(m, i)
+	return calcFingerStart(node.ID(), i)
 }
 
 // FingerNode resolves Chord node at given finger table offset i.
@@ -107,6 +105,24 @@ func (node *RemoteNode) SetFingerNode(i int, fing Node) error {
 	}
 
 	res, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return err
+	}
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
+	return nil
+}
+
+// RemoveFingerNodesByID attempts to remove all nodes from this node's
+// finger table that match given ID.
+func (node *RemoteNode) RemoveFingerNodesByID(id *ID) error {
+	url := fmt.Sprintf("http://%s:8080/node/fingers?id=%s", node.IPAddr().IP.String(), id.String())
+	req, err := http.NewRequest(http.MethodDelete, url, nil)
+	if err != nil {
+		return err
+	}
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}

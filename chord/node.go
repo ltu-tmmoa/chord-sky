@@ -10,16 +10,16 @@ type Node interface {
 	// IPAddr provides node network address.
 	IPAddr() *net.IPAddr
 
-	// Finger resolves provides finger interval at provided offset i.
+	// FingerStart resolves start ID of finger table entry i.
 	//
-	// The result is only defined for i in [1,M], where M is the amount of bits set
-	// at node ring creation.
-	Finger(i int) *Finger
+	// The result is only defined for i in [1,M], where M is the amount of bits
+	// set at node ring creation.
+	FingerStart(i int) *ID
 
 	// FingerNode resolves Chord node at given finger table offset i.
 	//
-	// The result is only defined for i in [1,M], where M is the amount of bits set
-	// at node ring creation.
+	// The result is only defined for i in [1,M], where M is the amount of bits
+	// set at node ring creation.
 	FingerNode(i int) (Node, error)
 
 	// SetFingerNode attempts to set this node's ith finger to given node.
@@ -27,6 +27,10 @@ type Node interface {
 	// The operation is only valid for i in [1,M], where M is the amount of
 	// bits set at node ring creation.
 	SetFingerNode(i int, fing Node) error
+
+	// RemoveFingerNodesByID attempts to remove all nodes from this node's
+	// finger table that match given ID.
+	RemoveFingerNodesByID(id *ID) error
 
 	// Successor yields the next node in this node's ring.
 	Successor() (Node, error)

@@ -13,7 +13,7 @@ func fakeAddr(id int64) *net.IPAddr {
 }
 
 func newID64(value int64, bits int) *ID {
-	return newID(*big.NewInt(value), bits)
+	return NewID(big.NewInt(value), bits)
 }
 
 func TestIdIntervalContainsEE(t *testing.T) {

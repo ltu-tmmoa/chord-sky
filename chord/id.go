@@ -17,15 +17,16 @@ type ID struct {
 	bits  int
 }
 
-func newID(value big.Int, bits int) *ID {
+// NewID creates from big integer and an amount of significant bits.
+func NewID(value *big.Int, bits int) *ID {
 	id := new(ID)
-	id.value = value
+	id.value = *value
 	id.bits = bits
 	return id
 }
 
-// NewID creates ID from given object a.
-func NewID(a interface{}) *ID {
+// Identity creates ID from given object a.
+func Identity(a interface{}) *ID {
 	return identity(a, HashBitsMax)
 }
 
@@ -42,7 +43,7 @@ func identity(a interface{}, bits int) *ID {
 	value.SetBytes(sum[:])
 	value.Mod(&value, &ceil)
 
-	return newID(value, bits)
+	return NewID(&value, bits)
 }
 
 // BigInt turns id into big.Int representation.
@@ -86,4 +87,10 @@ func (id *ID) Eq(other *ID) bool {
 // String produces a canonical string representation of this ID.
 func (id *ID) String() string {
 	return id.value.String()
+}
+
+func verifyIndexOrPanic(len, i int) {
+	if 1 > i || i > len {
+		panic(fmt.Sprintf("%d not in [1,%d]", i, len))
+	}
 }

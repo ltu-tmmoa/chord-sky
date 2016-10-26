@@ -44,6 +44,10 @@ func (node *Node) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	case "/node/fingers":
 		switch r.Method {
+		case http.MethodDelete:
+			node.deleteFingers(w, r)
+			return
+
 		case http.MethodGet:
 			node.getFingers(w, r)
 			return
@@ -124,6 +128,24 @@ func (node *Node) getInfo(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprint(w, buffer.String())
+}
+
+// Handles HTTP DELETE fingers request.
+//
+// Example: curl -X DELETE -v '<ip:port>/node/fingers?id=7asdt1dg7awdgj2aj2'
+func (node *Node) deleteFingers(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if len(id) == 0 {
+		node.badRequest(w, "id param not provided")
+		return
+	}
+	err := node.node.RemoveFingerNodesByID(chord.Identity(id))
+	if err != nil {
+		node.internalServerError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // Handles HTTP GET fingers request.
@@ -228,7 +250,7 @@ func (node *Node) getSuccessors(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, "id param not provided")
 		return
 	}
-	successor, err := node.node.FindSuccessor(chord.NewHash(id))
+	successor, err := node.node.FindSuccessor(chord.Identity(id))
 	if err != nil {
 		node.internalServerError(w, err)
 		return
@@ -282,7 +304,7 @@ func (node *Node) getPredecessors(w http.ResponseWriter, r *http.Request) {
 		node.badRequest(w, "id param not provided")
 		return
 	}
-	predecessor, err := node.node.FindPredecessor(chord.NewHash(id))
+	predecessor, err := node.node.FindPredecessor(chord.Identity(id))
 	if err != nil {
 		node.internalServerError(w, err)
 		return
