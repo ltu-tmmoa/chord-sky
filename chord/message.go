@@ -37,7 +37,7 @@ type message struct {
 	arg1 string
 }
 
-// Decodes ones message from reader and sets contsnt
+// Reads and decodes one message from reader.
 func decodeMessage(r io.Reader) (*message, error) {
 	m := message{}
 	n, err := fmt.Fscanf(r, messageFormat, &m.typ, &m.arg0, &m.arg1)
@@ -47,6 +47,7 @@ func decodeMessage(r io.Reader) (*message, error) {
 	return &m, nil
 }
 
+// Encodes this message to reader.
 func (m *message) encode(w io.Writer) error {
 	_, err := fmt.Fprintf(w, messageFormat, m.typ, m.arg0, m.arg1)
 	return err
