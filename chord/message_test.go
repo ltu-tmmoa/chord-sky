@@ -16,11 +16,13 @@ func TestMessageTranscoding(t *testing.T) {
 		}
 	}
 	encode := func(typ messageType, arg0, arg1 string) {
-		checkErr((&message{
+		m := message{
 			typ:  typ,
 			arg0: arg0,
 			arg1: arg1,
-		}).encode(&buf))
+		}
+		err := m.encode(&buf)
+		checkErr(err)
 	}
 	decode := func(typ int, arg0, arg1 string) {
 		m, err := decodeMessage(&buf)
