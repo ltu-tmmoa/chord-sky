@@ -1,6 +1,7 @@
 package net
 
 import (
+	"errors"
 	"net"
 	"sync"
 	"time"
@@ -11,12 +12,18 @@ const (
 	TCPSchedulerTimeout = 20 * time.Second
 )
 
+var (
+	// ErrTCPSchedulerClosed signifies that TCPScheduler is closed.
+	ErrTCPSchedulerClosed = errors.New("TCPScheduler closed")
+)
+
 // TCPScheduler manages scheduling of TCP reads/writes, making sure that no
 // read/write transactions overlap despite being issued from different threads.
 type TCPScheduler struct {
 	addr net.TCPAddr
 	conn *net.TCPConn
 	mutx sync.Mutex
+	term bool
 }
 
 // NewTCPScheduler creates new initialized TCP scheduler.
@@ -54,6 +61,11 @@ func (scheduler *TCPScheduler) Schedule(trans func(*net.TCPConn) error, errh fun
 		scheduler.mutx.Lock()
 		defer scheduler.mutx.Unlock()
 
+		if scheduler.term {
+			errh(ErrTCPSchedulerClosed)
+			return
+		}
+
 		if err := scheduler.dialTCP(); err != nil {
 			errh(err)
 			return
@@ -82,4 +94,19 @@ func (scheduler *TCPScheduler) dialTCP() error {
 		scheduler.conn, _ = conn0.(*net.TCPConn)
 	}
 	return nil
+}
+
+// Close terminates TCP scheduler, making further use of if always fail.
+func (scheduler *TCPScheduler) Close() error {
+	scheduler.mutx.Lock()
+	defer scheduler.mutx.Unlock()
+
+	scheduler.term = true
+
+	var err error
+	if scheduler.conn != nil {
+		err = scheduler.conn.Close()
+		scheduler.conn = nil
+	}
+	return err
 }
