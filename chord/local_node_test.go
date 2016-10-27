@@ -4,7 +4,6 @@ import "testing"
 
 func TestNodeJoin2(t *testing.T) {
 	nodes := prepareNodes(0, 1)
-	defer disconnectNodes(nodes)
 
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
@@ -30,7 +29,6 @@ func TestNodeJoin2(t *testing.T) {
 
 func TestNodeJoin3(t *testing.T) {
 	nodes := prepareNodes(0, 1, 3)
-	defer disconnectNodes(nodes)
 
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
@@ -64,7 +62,6 @@ func TestNodeJoin3(t *testing.T) {
 
 func TestNodeJoin4(t *testing.T) {
 	nodes := prepareNodes(0, 1, 3, 6)
-	defer disconnectNodes(nodes)
 
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
@@ -106,7 +103,6 @@ func TestNodeJoin4(t *testing.T) {
 
 func TestNodeJoin8(t *testing.T) {
 	nodes := prepareNodes(0, 1, 2, 3, 4, 5, 6, 7)
-	defer disconnectNodes(nodes)
 
 	nodes[0].Join(nil)
 	nodes[1].Join(nodes[0])
@@ -198,10 +194,4 @@ func prepareNodeFingerTests(t *testing.T, node *LocalNode) (func(int64), func(in
 		}
 	}
 	return expectPredecessorID, expectFingerNodeID
-}
-
-func disconnectNodes(nodes []*LocalNode) {
-	for _, node := range nodes {
-		node.Disconnect()
-	}
 }

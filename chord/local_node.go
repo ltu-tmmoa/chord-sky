@@ -6,8 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"sync"
-
-	"github.com/ltu-tmmoa/chord-sky/log"
 )
 
 // LocalNode represents a potential member of a Chord ring.
@@ -19,25 +17,18 @@ type LocalNode struct {
 	mutex       sync.RWMutex
 }
 
-// NewLocalNode creates a new local node from given address, which ought to be the application's public-facing IP
-// address.
+// NewLocalNode creates a new local node from given address, which ought to be
+// the application's public-facing IP address.
 func NewLocalNode(tcpAddr *net.TCPAddr) *LocalNode {
 	return newLocalNode(tcpAddr, identity(tcpAddr, HashBitsMax))
 }
 
 func newLocalNode(tcpAddr *net.TCPAddr, id *ID) *LocalNode {
-	node := &LocalNode{
+	return &LocalNode{
 		tcpAddr:     *tcpAddr,
 		id:          *id,
 		fingerTable: newFingerTable(id),
 	}
-
-	// Schedule handling of incoming connections.
-	go func() {
-		// TODO.
-	}()
-
-	return node
 }
 
 // ID returns node ID.
@@ -115,6 +106,9 @@ func (node *LocalNode) Predecessor() <-chan Node {
 		node.mutex.RLock()
 		defer node.mutex.RUnlock()
 
+		if node.predecessor == nil {
+			node.predecessor = <-node.FindPredecessor(node.ID())
+		}
 		return node.predecessor
 	})
 }
@@ -187,12 +181,18 @@ func (node *LocalNode) SetPredecessor(pred Node) {
 	node.predecessor = pred
 }
 
-// Disconnect removes this node from its ring, and terminates any live
-// network connections.
-//
-// Using this node after calling this method yields undefined behavior.
-func (node *LocalNode) Disconnect() {
-	// TODO: Stop listening for incoming connections.
+// DisassociateNodesByID removes any references held to node with an ID
+// equivalent to given.
+func (node *LocalNode) DisassociateNodesByID(id *ID) {
+	node.mutex.Lock()
+	defer node.mutex.Unlock()
+
+	node.fingerTable.RemoveFingerNodesByID(id)
+	// TODO: Remove from successor list?
+
+	if node.predecessor.ID().Eq(id) {
+		node.predecessor = nil
+	}
 }
 
 // Join makes this node join the ring of given other node.
@@ -309,18 +309,19 @@ func (node *LocalNode) updateFingerTable(n, s Node, i int) {
 //
 // Recommended to be called periodically in order to ensure node data
 // integrity.
-func (node *LocalNode) Stabilize() {
+func (node *LocalNode) Stabilize() error {
 	succ := node.successor()
 
 	x := <-succ.Predecessor()
 	if x == nil {
-		panic(fmt.Sprintf("Node stabilization failed. Unable to resolve %s predecessor.", succ.String()))
+		return fmt.Errorf("Node stabilization failed. Unable to resolve %s predecessor.", succ.String())
 	}
 	if idIntervalContainsEE(node.ID(), succ.ID(), x.ID()) {
 		node.SetSuccessor(x)
 	}
 	succ = node.successor()
 	node.notify(succ)
+	return nil
 }
 
 func (node *LocalNode) notify(node0 Node) {
@@ -333,29 +334,33 @@ func (node *LocalNode) notify(node0 Node) {
 // FixRandomFinger refreshes this node's finger table entries in relation to Chord ring changes.
 //
 // Recommended to be called periodically in order to ensure finger table integrity.
-func (node *LocalNode) FixRandomFinger() {
-	node.fixFinger((rand.Int() % node.ID().Bits()) + 1)
+func (node *LocalNode) FixRandomFinger() error {
+	return node.FixFinger((rand.Int() % node.ID().Bits()) + 1)
 }
 
-func (node *LocalNode) fixFinger(i int) {
+// FixFinger refreshes finger indicated by given index i.
+func (node *LocalNode) FixFinger(i int) error {
 	succ := <-node.FindSuccessor(node.FingerStart(i))
 	if succ != nil {
 		node.setFingerNodeUnlocked(i, succ)
-	} else {
-		log.Logger.Printf("Finger %d fix failed. Unable to resolve its successor node.", i)
+		return nil
 	}
+	return fmt.Errorf("Finger %d fix failed. Unable to resolve its successor node.", i)
 }
 
 // FixAllFingers refreshes all of this node's finger table entries.
-func (node *LocalNode) FixAllFingers() {
+func (node *LocalNode) FixAllFingers() error {
 	for i := range node.fingerTable {
-		node.fixFinger(i + 1)
+		if err := node.FixFinger(i + 1); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
 // PrintRing outputs this node's ring to console.
 func (node *LocalNode) PrintRing() {
-	fmt.Printf("Node %v ring:\n", node.id.String())
+	fmt.Printf("Node %v ring:\n", node.String())
 	succ := node.successor()
 	for succ != nil && !node.ID().Eq(succ.ID()) {
 		fmt.Printf(" => %v\n", succ)
@@ -366,5 +371,5 @@ func (node *LocalNode) PrintRing() {
 
 // String produces canonical string representation of this node.
 func (node *LocalNode) String() string {
-	return fmt.Sprintf("%s %s", node.id.String(), node.tcpAddr.String())
+	return fmt.Sprintf("%s@%s", node.id.String(), node.tcpAddr.String())
 }

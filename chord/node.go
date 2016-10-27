@@ -46,12 +46,6 @@ type Node interface {
 	// SetPredecessor attempts to set this node's predecessor to given node.
 	SetPredecessor(pred Node)
 
-	// Disconnect removes this node from its ring, and terminates any live
-	// network connections.
-	//
-	// Using this node after calling this method yields undefined behavior.
-	Disconnect()
-
 	// String turns Node into its canonical string representation.
 	String() string
 }
