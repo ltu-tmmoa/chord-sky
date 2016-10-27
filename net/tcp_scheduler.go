@@ -1,8 +1,6 @@
 package net
 
 import (
-	"errors"
-	"fmt"
 	"net"
 	"sync"
 	"time"
@@ -51,23 +49,26 @@ func (scheduler *TCPScheduler) Addr() *net.TCPAddr {
 // Schedule schedules provided transaction for eventual execution.
 //
 // The transaction is limited to a duration specified by `TCPSchedulerTimeout`.
-func (scheduler *TCPScheduler) Schedule(trans func(*net.TCPConn) error) <-chan error {
-	ch := make(chan error, 1)
+func (scheduler *TCPScheduler) Schedule(trans func(*net.TCPConn) error, errh func(error)) {
 	go func() {
-		defer func() {
-			if r := recover(); r != nil {
-				ch <- errors.New(fmt.Sprint(r))
-			}
-		}()
-
 		scheduler.mutx.Lock()
 		defer scheduler.mutx.Unlock()
 
-		scheduler.dialTCP()
-		scheduler.conn.SetDeadline(time.Now().Add(TCPSchedulerTimeout))
-		ch <- trans(scheduler.conn)
+		if err := scheduler.dialTCP(); err != nil {
+			errh(err)
+			return
+		}
+
+		conn := scheduler.conn
+
+		if err := conn.SetDeadline(time.Now().Add(TCPSchedulerTimeout)); err != nil {
+			errh(err)
+			return
+		}
+		if err := trans(conn); err != nil {
+			errh(err)
+		}
 	}()
-	return ch
 }
 
 // Connects to TCP scheduler address, unless a current connection exists.
