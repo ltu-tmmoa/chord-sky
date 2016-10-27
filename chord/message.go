@@ -38,16 +38,29 @@ type message struct {
 }
 
 // Reads and decodes one message from reader.
-func decodeMessage(r io.Reader) (*message, error) {
+func decodeMessage(r io.Reader, typ messageType) (*message, error) {
 	m := message{}
 	n, err := fmt.Fscanf(r, messageFormat, &m.typ, &m.arg0, &m.arg1)
 	if err != nil && n == 0 {
 		return nil, err
 	}
+	if m.typ != typ {
+		return nil, fmt.Errorf("Decoded message of type %d, expected %d.", m.typ, typ)
+	}
 	return &m, nil
 }
 
-// Encodes this message to reader.
+// Encodes and writes message to writer.
+func encodeMessage(w io.Writer, typ messageType, arg0, arg1 string) error {
+	m := message{
+		typ:  typ,
+		arg0: arg0,
+		arg1: arg1,
+	}
+	return m.encode(w)
+}
+
+// Encodes and writes this message to writer.
 func (m *message) encode(w io.Writer) error {
 	_, err := fmt.Fprintf(w, messageFormat, m.typ, m.arg0, m.arg1)
 	return err

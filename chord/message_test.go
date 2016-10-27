@@ -24,12 +24,9 @@ func TestMessageTranscoding(t *testing.T) {
 		err := m.encode(&buf)
 		checkErr(err)
 	}
-	decode := func(typ int, arg0, arg1 string) {
-		m, err := decodeMessage(&buf)
+	decode := func(typ messageType, arg0, arg1 string) {
+		m, err := decodeMessage(&buf, typ)
 		checkErr(err)
-		if m.typ != messageType(typ) {
-			t.Errorf("Message typ is %d, expected %d.", m.typ, typ)
-		}
 		if m.arg0 != arg0 {
 			t.Errorf("Message arg0 is \"%s\", expected \"%s\".", m.arg0, arg0)
 		}
@@ -51,7 +48,7 @@ func TestMessageTranscoding(t *testing.T) {
 	decode(1, "", "")
 
 	{
-		if _, err := decodeMessage(&buf); err != io.ErrUnexpectedEOF {
+		if _, err := decodeMessage(&buf, messageTypeGetSuccessor); err != io.ErrUnexpectedEOF {
 			t.Errorf("Expected ErrUnexpectedEOF, got %v.", err)
 		}
 	}

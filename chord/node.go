@@ -20,35 +20,37 @@ type Node interface {
 	//
 	// The result is only defined for i in [1,M], where M is the amount of bits
 	// set at node ring creation.
-	FingerNode(i int) (Node, error)
+	FingerNode(i int) <-chan Node
 
 	// SetFingerNode attempts to set this node's ith finger to given node.
 	//
 	// The operation is only valid for i in [1,M], where M is the amount of
 	// bits set at node ring creation.
-	SetFingerNode(i int, fing Node) error
-
-	// RemoveFingerNodesByID attempts to remove all nodes from this node's
-	// finger table that match given ID.
-	RemoveFingerNodesByID(id *ID) error
+	SetFingerNode(i int, fing Node)
 
 	// Successor yields the next node in this node's ring.
-	Successor() (Node, error)
+	Successor() <-chan Node
 
 	// Predecessor yields the previous node in this node's ring.
-	Predecessor() (Node, error)
+	Predecessor() <-chan Node
 
 	// FindSuccessor asks this node to find successor of given ID.
-	FindSuccessor(id *ID) (Node, error)
+	FindSuccessor(id *ID) <-chan Node
 
 	// FindPredecessor asks this node to find a predecessor of given ID.
-	FindPredecessor(id *ID) (Node, error)
+	FindPredecessor(id *ID) <-chan Node
 
 	// SetSuccessor attempts to set this node's successor to given node.
-	SetSuccessor(succ Node) error
+	SetSuccessor(succ Node)
 
 	// SetPredecessor attempts to set this node's predecessor to given node.
-	SetPredecessor(pred Node) error
+	SetPredecessor(pred Node)
+
+	// Disconnect removes this node from its ring, and terminates any live
+	// network connections.
+	//
+	// Using this node after calling this method yields undefined behavior.
+	Disconnect()
 
 	// String turns Node into its canonical string representation.
 	String() string

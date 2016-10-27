@@ -3,14 +3,12 @@ package main
 import (
 	"flag"
 	"net"
-	"net/http"
 	"strings"
 	"time"
 
 	"github.com/ltu-tmmoa/chord-sky/chord"
 	"github.com/ltu-tmmoa/chord-sky/log"
 	cnet "github.com/ltu-tmmoa/chord-sky/net"
-	chttp "github.com/ltu-tmmoa/chord-sky/net/http"
 )
 
 var peer string
@@ -56,30 +54,15 @@ func main() {
 	}
 
 	// Schedule recurring operations.
-	go func() {
-		time.Sleep(10 * time.Second)
-		for {
-			func() {
-				log.Logger.Println("Sending heartbeats ...")
-				localNode.Heartbeat()
+	time.Sleep(10 * time.Second)
+	for {
+		func() {
+			log.Logger.Println("Stabilizing ...")
+			localNode.Stabilize()
 
-				log.Logger.Println("Stabilizing ...")
-				localNode.Stabilize()
-
-				log.Logger.Println("Fixing random finger table entry ...")
-				localNode.FixRandomFinger()
-			}()
-			time.Sleep(30 * time.Second)
-		}
-	}()
-
-	// Expose local node as HTTP RPC service.
-	{
-		httpNode := chttp.NewNode(localNode)
-		http.Handle("/", httpNode)
-
-		localAddr := localNode.TCPAddr().String()
-		log.Logger.Println("Listening on", localAddr, "...")
-		log.Logger.Fatal(http.ListenAndServe(localAddr, nil))
+			log.Logger.Println("Fixing random finger table entry ...")
+			localNode.FixRandomFinger()
+		}()
+		time.Sleep(30 * time.Second)
 	}
 }
