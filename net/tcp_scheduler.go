@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+const (
+	// TCPSchedulerTimeout determines connection and transaction timeouts.
+	TCPSchedulerTimeout = 20 * time.Second
+)
+
 // TCPScheduler manages scheduling of TCP reads/writes, making sure that no
 // read/write transactions overlap despite being issued from different threads.
 type TCPScheduler struct {
@@ -30,7 +35,8 @@ func NewTCPScheduler(conn *net.TCPConn) *TCPScheduler {
 
 // NewTCPSchedulerLazy creates new uninitialized TCP scheduler.
 //
-// The address will not be dialed util the scheduler is provided with a task.
+// The address will not be dialed util the scheduler is provided with a
+// transaction.
 func NewTCPSchedulerLazy(addr *net.TCPAddr) *TCPScheduler {
 	return &TCPScheduler{
 		addr: *addr,
@@ -42,8 +48,10 @@ func (scheduler *TCPScheduler) Addr() *net.TCPAddr {
 	return scheduler.Addr()
 }
 
-// Schedule schedules provided function for eventual execution.
-func (scheduler *TCPScheduler) Schedule(f func(*net.TCPConn) error) <-chan error {
+// Schedule schedules provided transaction for eventual execution.
+//
+// The transaction is limited to a duration specified by `TCPSchedulerTimeout`.
+func (scheduler *TCPScheduler) Schedule(trans func(*net.TCPConn) error) <-chan error {
 	ch := make(chan error, 1)
 	go func() {
 		defer func() {
@@ -56,7 +64,8 @@ func (scheduler *TCPScheduler) Schedule(f func(*net.TCPConn) error) <-chan error
 		defer scheduler.mutx.Unlock()
 
 		scheduler.dialTCP()
-		ch <- f(scheduler.conn)
+		scheduler.conn.SetDeadline(time.Now().Add(TCPSchedulerTimeout))
+		ch <- trans(scheduler.conn)
 	}()
 	return ch
 }
@@ -64,7 +73,7 @@ func (scheduler *TCPScheduler) Schedule(f func(*net.TCPConn) error) <-chan error
 // Connects to TCP scheduler address, unless a current connection exists.
 func (scheduler *TCPScheduler) dialTCP() error {
 	if scheduler.conn == nil {
-		conn0, err := net.DialTimeout("tcp", scheduler.Addr().String(), 20*time.Second)
+		conn0, err := net.DialTimeout("tcp", scheduler.Addr().String(), TCPSchedulerTimeout)
 		if err != nil {
 			scheduler.conn = nil
 			return err
