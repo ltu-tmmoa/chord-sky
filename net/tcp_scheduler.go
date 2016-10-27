@@ -20,10 +20,10 @@ var (
 // TCPScheduler manages scheduling of TCP reads/writes, making sure that no
 // read/write transactions overlap despite being issued from different threads.
 type TCPScheduler struct {
-	addr net.TCPAddr
-	conn *net.TCPConn
-	mutx sync.Mutex
-	term bool
+	tcpAddr  net.TCPAddr
+	conn     *net.TCPConn
+	mutex    sync.Mutex
+	isClosed bool
 }
 
 // NewTCPScheduler creates new initialized TCP scheduler.
@@ -31,10 +31,10 @@ type TCPScheduler struct {
 // The provided TCP connection must be valid, and could suitably have been
 // acquired via a TCP listen operation.
 func NewTCPScheduler(conn *net.TCPConn) *TCPScheduler {
-	addr, _ := conn.RemoteAddr().(*net.TCPAddr)
+	tcpAddr, _ := conn.RemoteAddr().(*net.TCPAddr)
 	return &TCPScheduler{
-		addr: *addr,
-		conn: conn,
+		tcpAddr: *tcpAddr,
+		conn:    conn,
 	}
 }
 
@@ -42,15 +42,15 @@ func NewTCPScheduler(conn *net.TCPConn) *TCPScheduler {
 //
 // The address will not be dialed util the scheduler is provided with a
 // transaction.
-func NewTCPSchedulerLazy(addr *net.TCPAddr) *TCPScheduler {
+func NewTCPSchedulerLazy(tcpAddr *net.TCPAddr) *TCPScheduler {
 	return &TCPScheduler{
-		addr: *addr,
+		tcpAddr: *tcpAddr,
 	}
 }
 
-// Addr returns TCP address held by scheduler.
-func (scheduler *TCPScheduler) Addr() *net.TCPAddr {
-	return scheduler.Addr()
+// TCPAddr returns TCP address held by scheduler.
+func (scheduler *TCPScheduler) TCPAddr() *net.TCPAddr {
+	return &scheduler.tcpAddr
 }
 
 // Schedule schedules provided transaction for eventual execution.
@@ -58,10 +58,10 @@ func (scheduler *TCPScheduler) Addr() *net.TCPAddr {
 // The transaction is limited to a duration specified by `TCPSchedulerTimeout`.
 func (scheduler *TCPScheduler) Schedule(trans func(*net.TCPConn) error, errh func(error)) {
 	go func() {
-		scheduler.mutx.Lock()
-		defer scheduler.mutx.Unlock()
+		scheduler.mutex.Lock()
+		defer scheduler.mutex.Unlock()
 
-		if scheduler.term {
+		if scheduler.isClosed {
 			errh(ErrTCPSchedulerClosed)
 			return
 		}
@@ -86,7 +86,7 @@ func (scheduler *TCPScheduler) Schedule(trans func(*net.TCPConn) error, errh fun
 // Connects to TCP scheduler address, unless a current connection exists.
 func (scheduler *TCPScheduler) dialTCP() error {
 	if scheduler.conn == nil {
-		conn0, err := net.DialTimeout("tcp", scheduler.Addr().String(), TCPSchedulerTimeout)
+		conn0, err := net.DialTimeout("tcp", scheduler.TCPAddr().String(), TCPSchedulerTimeout)
 		if err != nil {
 			scheduler.conn = nil
 			return err
@@ -98,10 +98,10 @@ func (scheduler *TCPScheduler) dialTCP() error {
 
 // Close terminates TCP scheduler, making further use of if always fail.
 func (scheduler *TCPScheduler) Close() error {
-	scheduler.mutx.Lock()
-	defer scheduler.mutx.Unlock()
+	scheduler.mutex.Lock()
+	defer scheduler.mutex.Unlock()
 
-	scheduler.term = true
+	scheduler.isClosed = true
 
 	var err error
 	if scheduler.conn != nil {
