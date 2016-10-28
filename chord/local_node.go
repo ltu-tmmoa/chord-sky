@@ -188,7 +188,7 @@ func (node *LocalNode) DisassociateNodeByID(id *ID) {
 	node.fingerTable.RemoveFingerNodesByID(id)
 	// TODO: Remove from successor list?
 
-	if node.predecessor.ID().Eq(id) {
+	if node.predecessor != nil && node.predecessor.ID().Eq(id) {
 		node.predecessor = nil
 	}
 }

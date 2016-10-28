@@ -37,7 +37,7 @@ func main() {
 		chordService.Join(nil)
 
 	} else {
-		addr, err := net.ResolveTCPAddr("ip", trimmedPeer)
+		addr, err := net.ResolveTCPAddr("tcp", trimmedPeer)
 		if err != nil {
 			log.Logger.Fatalln(err)
 		}
