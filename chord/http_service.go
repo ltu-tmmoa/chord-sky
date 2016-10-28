@@ -49,26 +49,38 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 			for i := 1; i <= m; i++ {
 				fmt.Fprintf(buf, "%3d:         %s\r\n", i, <-lnode.FingerNode(i))
 			}
+			w.WriteHeader(http.StatusOK)
 			w.Write(buf.Bytes())
 		}).
 		Methods(http.MethodGet)
 
 	router.
 		HandleFunc("/info/ring", func(w http.ResponseWriter, req *http.Request) {
+			if req.Body != nil {
+				req.Body.Close()
+			}
+			w.WriteHeader(http.StatusOK)
 			lnode.writeRingTextTo(w)
 		}).
 		Methods(http.MethodGet)
 
 	router.
 		HandleFunc("/info/fix", func(w http.ResponseWriter, req *http.Request) {
+			if req.Body != nil {
+				req.Body.Close()
+			}
 			if err := lnode.fixAllFingers(); err != nil {
 				panic(err)
 			}
+			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodGet)
 
 	router.
 		HandleFunc("/fingers/{i:[0-9]+}", func(w http.ResponseWriter, req *http.Request) {
+			if req.Body != nil {
+				req.Body.Close()
+			}
 			i, _ := strconv.Atoi(mux.Vars(req)["i"])
 			node, _ := (<-lnode.FingerNode(i)).Unwrap()
 			httpWrite(w, http.StatusOK, node.TCPAddr())
@@ -91,12 +103,18 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 
 	router.
 		HandleFunc("/heartbeat", func(w http.ResponseWriter, req *http.Request) {
+			if req.Body != nil {
+				req.Body.Close()
+			}
 			httpWrite(w, http.StatusOK, "\u2764")
 		}).
 		Methods(http.MethodGet)
 
 	router.
 		HandleFunc("/successor", func(w http.ResponseWriter, req *http.Request) {
+			if req.Body != nil {
+				req.Body.Close()
+			}
 			succ, _ := (<-lnode.Successor()).Unwrap()
 			httpWrite(w, http.StatusOK, succ.TCPAddr())
 		}).
@@ -104,6 +122,9 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 
 	router.
 		HandleFunc("/predecessor", func(w http.ResponseWriter, req *http.Request) {
+			if req.Body != nil {
+				req.Body.Close()
+			}
 			pred, _ := (<-lnode.Predecessor()).Unwrap()
 			httpWrite(w, http.StatusOK, pred.TCPAddr())
 		}).
@@ -111,6 +132,9 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 
 	router.
 		HandleFunc("/successors", func(w http.ResponseWriter, req *http.Request) {
+			if req.Body != nil {
+				req.Body.Close()
+			}
 			id, err := httpReadQueryID(req)
 			if err != nil {
 				httpWrite(w, http.StatusBadRequest, err.Error())

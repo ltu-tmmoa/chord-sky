@@ -68,5 +68,6 @@ func main() {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 	}
+	httpServer.SetKeepAlivesEnabled(false)
 	log.Logger.Fatalln(httpServer.ListenAndServe())
 }
