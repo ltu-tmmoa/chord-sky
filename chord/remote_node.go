@@ -7,8 +7,8 @@ import (
 
 // RemoteNode represents some Chord node available remotely.
 type RemoteNode struct {
-	tcpAddr net.TCPAddr
-	id      ID
+	addr net.TCPAddr
+	id   ID
 	// TODO: Node pool?
 }
 
@@ -22,10 +22,10 @@ type RemoteNode struct {
 //
 // The `onDisconnect` function may be passed on to other remote nodes by this
 // node.
-func NewRemoteNode(tcpAddr *net.TCPAddr) *RemoteNode {
+func NewRemoteNode(addr *net.TCPAddr) *RemoteNode {
 	return &RemoteNode{
-		tcpAddr: *tcpAddr,
-		id:      *Identity(tcpAddr),
+		addr: *addr,
+		id:   *Identity(addr),
 	}
 }
 
@@ -36,7 +36,7 @@ func (node *RemoteNode) ID() *ID {
 
 // TCPAddr provides node network address.
 func (node *RemoteNode) TCPAddr() *net.TCPAddr {
-	return &node.tcpAddr
+	return &node.addr
 }
 
 // FingerStart resolves start ID of finger table entry i.

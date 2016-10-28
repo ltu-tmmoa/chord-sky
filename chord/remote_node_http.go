@@ -35,12 +35,12 @@ func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{})
 			onError(err)
 			return
 		}
-		tcpAddr, err := net.ResolveTCPAddr("tcp", string(body))
+		addr, err := net.ResolveTCPAddr("tcp", string(body))
 		if err != nil {
 			onError(err)
 			return
 		}
-		ch <- NewRemoteNode(tcpAddr)
+		ch <- NewRemoteNode(addr)
 	}()
 	return ch
 }
