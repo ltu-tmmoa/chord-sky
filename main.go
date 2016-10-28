@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"net"
+	"net/http"
 	"strings"
 	"time"
 
@@ -24,45 +25,43 @@ func main() {
 
 	log.Logger.Println("Chord Sky")
 
-	// Setup chord node representing this machine.
-	var localNode *chord.LocalNode
-	{
-		localTCPAddr, err := cnet.GetLocalTCPAddr(port)
+	laddr, err := cnet.GetLocalTCPAddr(port)
+	if err != nil {
+		log.Logger.Fatalln(err)
+	}
+	chordService := chord.NewHTTPService(laddr)
+
+	trimmedPeer := strings.TrimSpace(peer)
+	if len(trimmedPeer) == 0 {
+		log.Logger.Println("No peer specified. Forming new ring ...")
+		chordService.Join(nil)
+
+	} else {
+		addr, err := net.ResolveTCPAddr("ip", trimmedPeer)
 		if err != nil {
 			log.Logger.Fatalln(err)
 		}
-		localNode = chord.NewLocalNode(localTCPAddr)
+		log.Logger.Println("Joining ring via", trimmedPeer, "...")
+		chordService.Join(addr)
 	}
 
-	// Join new or existing Chord ring.
-	{
-		trimmedPeer := strings.TrimSpace(peer)
-		if len(trimmedPeer) == 0 {
-			log.Logger.Println("No peer specified. Forming new ring ...")
-
-			localNode.Join(nil)
-
-		} else {
-			log.Logger.Println("Joining ring via", trimmedPeer, "...")
-
-			tcpAddr, err := net.ResolveTCPAddr("ip", trimmedPeer)
-			if err != nil {
-				log.Logger.Fatalln(err)
+	go func() {
+		time.Sleep(10 * time.Second)
+		for {
+			log.Logger.Println("Refreshing ...")
+			if err := chordService.Refresh(); err != nil {
+				log.Logger.Printf("Reresh error: %s", err.Error())
 			}
-			localNode.Join(chord.NewRemoteNode(tcpAddr))
+			time.Sleep(30 * time.Second)
 		}
-	}
+	}()
 
-	// Schedule recurring operations.
-	time.Sleep(10 * time.Second)
-	for {
-		func() {
-			log.Logger.Println("Stabilizing ...")
-			localNode.Stabilize()
-
-			log.Logger.Println("Fixing random finger table entry ...")
-			localNode.FixRandomFinger()
-		}()
-		time.Sleep(30 * time.Second)
+	log.Logger.Println("Accepting incoming connections on", laddr, "...")
+	http.Handle("/node/", http.StripPrefix("/node", chordService))
+	httpServer := http.Server{
+		Addr:         laddr.String(),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
 	}
+	log.Logger.Fatalln(httpServer.ListenAndServe())
 }
