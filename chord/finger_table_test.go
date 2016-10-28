@@ -11,7 +11,7 @@ const (
 )
 
 func TestFingerStart(t *testing.T) {
-	expectNodeFingerStart := func(table FingerTable, i int, expected int64) {
+	expectNodeFingerStart := func(table *FingerTable, i int, expected int64) {
 		actual := table.FingerStart(i)
 
 		if actual.BigInt().Int64() != expected {
@@ -28,7 +28,7 @@ func TestFingerStart(t *testing.T) {
 }
 
 func TestFingerInterval(t *testing.T) {
-	expectNodeFingerInterval := func(table FingerTable, i int, expectedStart, expectedStop int64) {
+	expectNodeFingerInterval := func(table *FingerTable, i int, expectedStart, expectedStop int64) {
 		actualStart := table.FingerStart(i)
 		actualStop := table.FingerStart(i + 1)
 
@@ -55,6 +55,8 @@ func TestFingerInterval(t *testing.T) {
 	}
 }
 
-func newTable(id int64) FingerTable {
-	return newFingerTable(NewID(big.NewInt(id), M3))
+func newTable(id int64) *FingerTable {
+	return newFingerTable(&RemoteNode{
+		id: *NewID(big.NewInt(id), M3),
+	})
 }

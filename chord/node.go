@@ -26,7 +26,7 @@ type Node interface {
 	//
 	// The operation is only valid for i in [1,M], where M is the amount of
 	// bits set at node ring creation.
-	SetFingerNode(i int, fing Node)
+	SetFingerNode(i int, fing Node) <-chan *struct{}
 
 	// Successor yields the next node in this node's ring.
 	Successor() <-chan Node
@@ -41,10 +41,10 @@ type Node interface {
 	FindPredecessor(id *ID) <-chan Node
 
 	// SetSuccessor attempts to set this node's successor to given node.
-	SetSuccessor(succ Node)
+	SetSuccessor(succ Node) <-chan *struct{}
 
 	// SetPredecessor attempts to set this node's predecessor to given node.
-	SetPredecessor(pred Node)
+	SetPredecessor(pred Node) <-chan *struct{}
 
 	// String turns Node into its canonical string representation.
 	String() string

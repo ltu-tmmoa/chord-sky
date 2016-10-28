@@ -62,8 +62,14 @@ func (node *RemoteNode) FingerNode(i int) <-chan Node {
 //
 // The operation is only valid for i in [1,M], where M is the amount of
 // bits set at node ring creation.
-func (node *RemoteNode) SetFingerNode(i int, fing Node) {
-	node.httpPut(fmt.Sprintf("fingers/%d", i), fing.TCPAddr().String())
+func (node *RemoteNode) SetFingerNode(i int, fing Node) <-chan *struct{} {
+	return node.httpPut(fmt.Sprintf("fingers/%d", i), fing.TCPAddr().String())
+}
+
+// Heartbeat sends a heartbeat to remote node. If the operation fails it is
+// removed from the node pool.
+func (node *RemoteNode) Heartbeat() {
+	node.httpHeartbeat("heartbeat")
 }
 
 // Successor yields the next node in this node's ring.
@@ -87,13 +93,13 @@ func (node *RemoteNode) FindPredecessor(id *ID) <-chan Node {
 }
 
 // SetSuccessor attempts to set this node's successor to given node.
-func (node *RemoteNode) SetSuccessor(succ Node) {
-	node.httpPut("successor", succ.TCPAddr().String())
+func (node *RemoteNode) SetSuccessor(succ Node) <-chan *struct{} {
+	return node.httpPut("successor", succ.TCPAddr().String())
 }
 
 // SetPredecessor attempts to set this node's predecessor to given node.
-func (node *RemoteNode) SetPredecessor(pred Node) {
-	node.httpPut("predecessor", pred.TCPAddr().String())
+func (node *RemoteNode) SetPredecessor(pred Node) <-chan *struct{} {
+	return node.httpPut("predecessor", pred.TCPAddr().String())
 }
 
 // String turns Node into its canonical string representation.

@@ -11,16 +11,42 @@ import (
 	"github.com/ltu-tmmoa/chord-sky/log"
 )
 
+func (node *RemoteNode) httpHeartbeat(path string) {
+	onError := func(err error) {
+		node.pool.RemoveNode(node.TCPAddr())
+		log.Logger.Printf("Node %s hearbeat failure: %s", node, err.Error())
+	}
+	go func() {
+		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr(), path)
+		res, err := http.Get(url)
+		if err != nil {
+			onError(err)
+			return
+		}
+		if res.Body == nil {
+			onError(errors.New("No body in response."))
+			return
+		}
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			onError(err)
+			return
+		}
+		log.Logger.Println("Node", node, "heartbeat (", string(body), ").")
+	}()
+}
+
 func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{}) <-chan Node {
 	ch := make(chan Node, 1)
 	onError := func(err error) {
 		node.pool.RemoveNode(node.TCPAddr())
-		log.Logger.Printf("Node %s disconnected. Reason: %s", node.String(), err.Error())
+		log.Logger.Printf("Node %s disconnected: %s", node.String(), err.Error())
 		ch <- nil
 	}
 	go func() {
 		path := fmt.Sprintf(pathFormat, pathArgs...)
-		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr().String(), path)
+		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr(), path)
 		res, err := http.Get(url)
 		if err != nil {
 			onError(err)
@@ -46,10 +72,12 @@ func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{})
 	return ch
 }
 
-func (node *RemoteNode) httpPut(path, body string) {
+func (node *RemoteNode) httpPut(path, body string) <-chan *struct{} {
+	ch := make(chan *struct{}, 1)
 	onError := func(err error) {
 		node.pool.RemoveNode(node.TCPAddr())
-		log.Logger.Printf("Node %s disconnected. Reason: %s", node.String(), err.Error())
+		log.Logger.Printf("Node %s disconnected: %s", node.String(), err.Error())
+		ch <- nil
 	}
 	go func() {
 		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr().String(), path)
@@ -69,5 +97,7 @@ func (node *RemoteNode) httpPut(path, body string) {
 		if res.StatusCode < 200 || res.StatusCode > 299 {
 			onError(fmt.Errorf("HTTP PUT %s -> %d %s", url, res.StatusCode, res.Status))
 		}
+		ch <- nil
 	}()
+	return ch
 }

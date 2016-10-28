@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/ltu-tmmoa/chord-sky/log"
 )
 
 var (
@@ -53,6 +54,20 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		Methods(http.MethodGet)
 
 	router.
+		HandleFunc("/info/ring", func(w http.ResponseWriter, req *http.Request) {
+			lnode.WriteRingTextTo(w)
+		}).
+		Methods(http.MethodGet)
+
+	router.
+		HandleFunc("/info/fix", func(w http.ResponseWriter, req *http.Request) {
+			if err := lnode.FixAllFingers(); err != nil {
+				panic(err)
+			}
+		}).
+		Methods(http.MethodGet)
+
+	router.
 		HandleFunc("/fingers/{i:[0-9]+}", func(w http.ResponseWriter, req *http.Request) {
 			i, _ := strconv.Atoi(mux.Vars(req)["i"])
 			node := <-lnode.FingerNode(i)
@@ -73,6 +88,12 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)
+
+	router.
+		HandleFunc("/heartbeat", func(w http.ResponseWriter, req *http.Request) {
+			httpWrite(w, http.StatusOK, "\u2764")
+		}).
+		Methods(http.MethodGet)
 
 	router.
 		HandleFunc("/successor", func(w http.ResponseWriter, req *http.Request) {
@@ -198,15 +219,7 @@ func (service *HTTPService) Join(addr *net.TCPAddr) {
 // This method should be called at sensible intervals in order for the service
 // to maintain its integrity.
 func (service *HTTPService) Refresh() error {
-	lnode := service.pool.lnode
-
-	if err := lnode.Stabilize(); err != nil {
-		return err
-	}
-	if err := lnode.FixRandomFinger(); err != nil {
-		return err
-	}
-	return nil
+	return service.pool.Refresh()
 }
 
 func (service *HTTPService) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -215,6 +228,6 @@ func (service *HTTPService) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 			http.Error(w, fmt.Sprint(r), http.StatusInternalServerError)
 		}
 	}()
-	fmt.Println("Incoming request:", req.Method, req.URL)
+	log.Logger.Println(req.Method, req.URL)
 	service.router.ServeHTTP(w, req)
 }

@@ -55,3 +55,23 @@ func (pool *NodePool) RemoveNode(addr *net.TCPAddr) {
 		delete(pool.nodes, key)
 	}
 }
+
+// Refresh causes a hearbeat message to be sent to each remote node in pool.
+func (pool *NodePool) Refresh() error {
+	defer func() {
+		for _, node := range pool.nodes {
+			rnode, ok := node.(*RemoteNode)
+			if ok {
+				rnode.Heartbeat()
+			}
+		}
+	}()
+
+	if err := pool.lnode.Stabilize(); err != nil {
+		return err
+	}
+	if err := pool.lnode.FixRandomFinger(); err != nil {
+		return err
+	}
+	return nil
+}

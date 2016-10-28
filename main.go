@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -21,9 +22,14 @@ func init() {
 }
 
 func main() {
+	// Force goroutine scheduling to be confined to one thread to avoid having
+	// to lock anything.
+	runtime.GOMAXPROCS(1)
+
 	flag.Parse()
 
 	log.Logger.Println("Chord Sky")
+	http.DefaultClient.Timeout = 5 * time.Second
 
 	laddr, err := cnet.GetLocalTCPAddr(port)
 	if err != nil {
@@ -46,13 +52,12 @@ func main() {
 	}
 
 	go func() {
-		time.Sleep(10 * time.Second)
 		for {
+			time.Sleep(10 * time.Second)
 			log.Logger.Println("Refreshing ...")
 			if err := chordService.Refresh(); err != nil {
-				log.Logger.Printf("Reresh error: %s", err.Error())
+				log.Logger.Printf("Refresh error: %s", err.Error())
 			}
-			time.Sleep(30 * time.Second)
 		}
 	}()
 
@@ -60,8 +65,8 @@ func main() {
 	http.Handle("/node/", http.StripPrefix("/node", chordService))
 	httpServer := http.Server{
 		Addr:         laddr.String(),
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
 	}
 	log.Logger.Fatalln(httpServer.ListenAndServe())
 }

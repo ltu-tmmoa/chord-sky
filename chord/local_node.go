@@ -2,17 +2,16 @@ package chord
 
 import (
 	"fmt"
+	"io"
 	"net"
-	"sync"
 )
 
 // LocalNode represents a potential member of a Chord ring.
 type LocalNode struct {
 	addr        net.TCPAddr
 	id          ID
-	fingerTable FingerTable
+	fingerTable *FingerTable
 	predecessor Node
-	mutex       sync.RWMutex
 }
 
 // NewLocalNode creates a new local node from given address, which ought to be
@@ -22,11 +21,12 @@ func NewLocalNode(addr *net.TCPAddr) *LocalNode {
 }
 
 func newLocalNode(addr *net.TCPAddr, id *ID) *LocalNode {
-	return &LocalNode{
-		addr:        *addr,
-		id:          *id,
-		fingerTable: newFingerTable(id),
+	node := &LocalNode{
+		addr: *addr,
+		id:   *id,
 	}
+	node.fingerTable = newFingerTable(node)
+	return node
 }
 
 // ID returns node ID.
@@ -44,9 +44,6 @@ func (node *LocalNode) TCPAddr() *net.TCPAddr {
 // The result is only defined for i in [1,M], where M is the amount of bits set
 // at node ring creation.
 func (node *LocalNode) FingerStart(i int) *ID {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-
 	return node.fingerTable.FingerStart(i)
 }
 
@@ -61,9 +58,6 @@ func (node *LocalNode) FingerNode(i int) <-chan Node {
 }
 
 func (node *LocalNode) fingerNode(i int) Node {
-	node.mutex.RLock()
-	defer node.mutex.RUnlock()
-
 	return node.fingerTable.FingerNode(i)
 }
 
@@ -77,11 +71,17 @@ func (node *LocalNode) getNode(f func() Node) <-chan Node {
 //
 // The operation is only valid for i in [1,M], where M is the amount of
 // bits set at node ring creation.
-func (node *LocalNode) SetFingerNode(i int, fing Node) {
-	node.mutex.Lock()
-	defer node.mutex.Unlock()
+func (node *LocalNode) SetFingerNode(i int, fing Node) <-chan *struct{} {
+	return node.getVoid(func() {
+		node.fingerTable.SetFingerNode(i, fing)
+	})
+}
 
-	node.fingerTable.SetFingerNode(i, fing)
+func (node *LocalNode) getVoid(f func()) <-chan *struct{} {
+	ch := make(chan *struct{}, 1)
+	f()
+	ch <- nil
+	return ch
 }
 
 func (node *LocalNode) setFingerNodeUnlocked(i int, fing Node) {
@@ -101,11 +101,11 @@ func (node *LocalNode) successor() Node {
 // Predecessor yields the previous node in this node's ring.
 func (node *LocalNode) Predecessor() <-chan Node {
 	return node.getNode(func() Node {
-		node.mutex.RLock()
-		defer node.mutex.RUnlock()
-
 		if node.predecessor == nil {
 			node.predecessor = <-node.FindPredecessor(node.ID())
+			if node.predecessor == nil {
+				node.predecessor = node
+			}
 		}
 		return node.predecessor
 	})
@@ -116,9 +116,6 @@ func (node *LocalNode) Predecessor() <-chan Node {
 // See Chord paper figure 4.
 func (node *LocalNode) FindSuccessor(id *ID) <-chan Node {
 	return node.getNode(func() Node {
-		node.mutex.RLock()
-		defer node.mutex.RUnlock()
-
 		node0 := <-node.FindPredecessor(id)
 		if node0 == nil {
 			return nil
@@ -132,9 +129,6 @@ func (node *LocalNode) FindSuccessor(id *ID) <-chan Node {
 // See Chord paper figure 4.
 func (node *LocalNode) FindPredecessor(id *ID) <-chan Node {
 	return node.getNode(func() Node {
-		node.mutex.RLock()
-		defer node.mutex.RUnlock()
-
 		var n0 Node
 		n0 = node
 		for {
@@ -167,24 +161,22 @@ func closestPrecedingFinger(n Node, id *ID) Node {
 }
 
 // SetSuccessor attempts to set this node's successor to given node.
-func (node *LocalNode) SetSuccessor(succ Node) {
-	node.SetFingerNode(1, succ)
+func (node *LocalNode) SetSuccessor(succ Node) <-chan *struct{} {
+	return node.getVoid(func() {
+		node.SetFingerNode(1, succ)
+	})
 }
 
 // SetPredecessor attempts to set this node's predecessor to given node.
-func (node *LocalNode) SetPredecessor(pred Node) {
-	node.mutex.Lock()
-	defer node.mutex.Unlock()
-
-	node.predecessor = pred
+func (node *LocalNode) SetPredecessor(pred Node) <-chan *struct{} {
+	return node.getVoid(func() {
+		node.predecessor = pred
+	})
 }
 
 // DisassociateNodeByID removes any references held to node with an ID
 // equivalent to given.
 func (node *LocalNode) DisassociateNodeByID(id *ID) {
-	node.mutex.Lock()
-	defer node.mutex.Unlock()
-
 	node.fingerTable.RemoveFingerNodesByID(id)
 	// TODO: Remove from successor list?
 
@@ -193,15 +185,19 @@ func (node *LocalNode) DisassociateNodeByID(id *ID) {
 	}
 }
 
-// PrintRing outputs this node's ring to console.
-func (node *LocalNode) PrintRing() {
-	fmt.Printf("Node %v ring:\n", node.String())
+// WriteRingTextTo writes a list of the members of this node's ring to `w`.
+//
+// It might take a while before this returns, as it might need to call a lot of
+// remote hosts to gather all required data.
+func (node *LocalNode) WriteRingTextTo(w io.Writer) {
 	succ := node.successor()
-	for succ != nil && !node.ID().Eq(succ.ID()) {
-		fmt.Printf(" => %v\n", succ)
-		succ = node.successor()
+	for succ != nil {
+		fmt.Fprintf(w, "%v\r\n", succ)
+		if node.ID().Eq(succ.ID()) {
+			break
+		}
+		succ = <-succ.Successor()
 	}
-	fmt.Println()
 }
 
 // String produces canonical string representation of this node.

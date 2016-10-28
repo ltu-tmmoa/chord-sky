@@ -15,10 +15,10 @@ func (node *LocalNode) Stabilize() error {
 
 	x := <-succ.Predecessor()
 	if x == nil {
-		return fmt.Errorf("Node stabilization failed. Unable to resolve %s predecessor.", succ.String())
+		return fmt.Errorf("Node stabilization failed. Unable to resolve %s predecessor.", succ)
 	}
 	if idIntervalContainsEE(node.ID(), succ.ID(), x.ID()) {
-		node.SetSuccessor(x)
+		<-node.SetSuccessor(x)
 	}
 	succ = node.successor()
 	node.notify(succ)
@@ -28,7 +28,7 @@ func (node *LocalNode) Stabilize() error {
 func (node *LocalNode) notify(node0 Node) {
 	pred := <-node0.Predecessor()
 	if pred == nil || idIntervalContainsEE(pred.ID(), node0.ID(), node.ID()) {
-		node0.SetPredecessor(node)
+		<-node0.SetPredecessor(node)
 	}
 }
 
@@ -43,7 +43,7 @@ func (node *LocalNode) FixRandomFinger() error {
 func (node *LocalNode) FixFinger(i int) error {
 	succ := <-node.FindSuccessor(node.FingerStart(i))
 	if succ != nil {
-		node.setFingerNodeUnlocked(i, succ)
+		<-node.SetFingerNode(i, succ)
 		return nil
 	}
 	return fmt.Errorf("Finger %d fix failed. Unable to resolve its successor node.", i)
@@ -51,7 +51,7 @@ func (node *LocalNode) FixFinger(i int) error {
 
 // FixAllFingers refreshes all of this node's finger table entries.
 func (node *LocalNode) FixAllFingers() error {
-	for i := range node.fingerTable {
+	for i := range node.fingerTable.fingers {
 		if err := node.FixFinger(i + 1); err != nil {
 			return err
 		}

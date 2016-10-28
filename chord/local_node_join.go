@@ -14,8 +14,8 @@ func (node *LocalNode) Join(node0 Node) {
 		node.updateOthers()
 		// TODO: Move keys in (predecessor,n] from successor
 	} else {
-		node.SetSuccessor(node)
-		node.SetPredecessor(node)
+		<-node.SetSuccessor(node)
+		<-node.SetPredecessor(node)
 	}
 }
 
@@ -38,11 +38,11 @@ func (node *LocalNode) initFingerTable(node0 Node) {
 			panic("Failed to resolve predecessor node.")
 		}
 
-		node.SetSuccessor(succ)
-		node.SetPredecessor(pred)
+		<-node.SetSuccessor(succ)
+		<-node.SetPredecessor(pred)
 
-		pred.SetSuccessor(node)
-		succ.SetPredecessor(node)
+		<-pred.SetSuccessor(node)
+		<-succ.SetPredecessor(node)
 	}
 	// Update this node's finger table, on best-effort basis.
 	{
@@ -60,7 +60,7 @@ func (node *LocalNode) initFingerTable(node0 Node) {
 					continue
 				}
 			}
-			node.setFingerNodeUnlocked(i+1, n)
+			<-node.SetFingerNode(i+1, n)
 		}
 	}
 }
@@ -100,7 +100,7 @@ func (node *LocalNode) updateFingerTable(n, s Node, i int) {
 		return
 	}
 	if idIntervalContainsIE(n.FingerStart(i), fingNode.ID(), s.ID()) {
-		n.SetFingerNode(i, s)
+		<-n.SetFingerNode(i, s)
 		pred := <-n.Predecessor()
 		if pred == nil {
 			return
