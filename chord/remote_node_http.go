@@ -11,7 +11,7 @@ import (
 	"github.com/ltu-tmmoa/chord-sky/log"
 )
 
-func (node *RemoteNode) httpHeartbeat(path string) {
+func (node *remoteNode) httpHeartbeat(path string) {
 	onError := func(err error) {
 		node.pool.RemoveNode(node.TCPAddr())
 		log.Logger.Printf("Node %s hearbeat failure: %s", node, err.Error())
@@ -37,7 +37,7 @@ func (node *RemoteNode) httpHeartbeat(path string) {
 	}()
 }
 
-func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{}) <-chan Node {
+func (node *remoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{}) <-chan Node {
 	ch := make(chan Node, 1)
 	onError := func(err error) {
 		node.pool.RemoveNode(node.TCPAddr())
@@ -72,7 +72,7 @@ func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{})
 	return ch
 }
 
-func (node *RemoteNode) httpPut(path, body string) <-chan *struct{} {
+func (node *remoteNode) httpPut(path, body string) <-chan *struct{} {
 	ch := make(chan *struct{}, 1)
 	onError := func(err error) {
 		node.pool.RemoveNode(node.TCPAddr())

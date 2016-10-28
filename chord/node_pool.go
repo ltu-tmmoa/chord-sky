@@ -35,7 +35,7 @@ func (pool *NodePool) GetOrCreateNode(addr *net.TCPAddr) Node {
 	if node, ok := pool.nodes[key]; ok {
 		return node
 	}
-	node := NewRemoteNode(addr, pool)
+	node := newRemoteNode(addr, pool)
 	pool.nodes[key] = node
 	return node
 }
@@ -60,7 +60,7 @@ func (pool *NodePool) RemoveNode(addr *net.TCPAddr) {
 func (pool *NodePool) Refresh() error {
 	defer func() {
 		for _, node := range pool.nodes {
-			rnode, ok := node.(*RemoteNode)
+			rnode, ok := node.(*remoteNode)
 			if ok {
 				rnode.Heartbeat()
 			}
