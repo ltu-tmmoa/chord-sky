@@ -81,7 +81,7 @@ func (id *ID) Eq(other *ID) bool {
 
 // String produces a canonical string representation of this ID.
 func (id *ID) String() string {
-	return id.value.String()
+	return id.value.Text(16)
 }
 
 func verifyIndexOrPanic(len, i int) {
