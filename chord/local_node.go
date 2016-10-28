@@ -17,7 +17,7 @@ type localNode struct {
 // NewLocalNode creates a new local node from given address, which ought to be
 // the application's public-facing IP address.
 func newLocalNode(addr *net.TCPAddr) *localNode {
-	return newLocalNodeID(addr, identity(addr, HashBitsMax))
+	return newLocalNodeID(addr, hashAddr(addr))
 }
 
 func newLocalNodeID(addr *net.TCPAddr, id *ID) *localNode {

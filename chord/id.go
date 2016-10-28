@@ -4,11 +4,11 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"math/big"
+	"net"
 )
 
 const (
-	// HashBitsMax represents the maximum allowed number of bits in ID objects.
-	HashBitsMax = sha1.Size * 8
+	hashBitsMax = sha1.Size * 8
 )
 
 // ID identifies some Chord node or key.
@@ -28,7 +28,7 @@ func NewID(value *big.Int, bits int) *ID {
 
 // ParseID takes a string `s` and convert it into an `*ID`.
 func ParseID(s string) (*ID, bool) {
-	return parseID(s, HashBitsMax)
+	return parseID(s, hashBitsMax)
 }
 
 func parseID(s string, bits int) (*ID, bool) {
@@ -39,16 +39,11 @@ func parseID(s string, bits int) (*ID, bool) {
 	return NewID(value, bits), true
 }
 
-// Identity creates ID from given object a.
-func Identity(a interface{}) *ID {
-	return identity(a, HashBitsMax)
-}
-
-func identity(a interface{}, bits int) *ID {
+func hashAddr(addr *net.TCPAddr) *ID {
 	value := new(big.Int)
-	sum := sha1.Sum([]byte(fmt.Sprint(a)))
+	sum := sha1.Sum([]byte(addr.String()))
 	value.SetBytes(sum[:])
-	return NewID(value, bits)
+	return NewID(value, hashBitsMax)
 }
 
 func (id *ID) truncate() {

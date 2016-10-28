@@ -15,7 +15,7 @@ type remoteNode struct {
 func newRemoteNode(addr *net.TCPAddr, pool *NodePool) *remoteNode {
 	return &remoteNode{
 		addr: *addr,
-		id:   *Identity(addr),
+		id:   *hashAddr(addr),
 		pool: pool,
 	}
 }
