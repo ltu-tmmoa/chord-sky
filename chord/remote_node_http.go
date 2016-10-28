@@ -45,13 +45,13 @@ func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{})
 	return ch
 }
 
-func (node *RemoteNode) httpPut(path, arg string) {
+func (node *RemoteNode) httpPut(path, body string) {
 	onError := func(err error) {
 		log.Logger.Print(err.Error())
 	}
 	go func() {
 		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr().String(), path)
-		req, err := http.NewRequest(http.MethodPut, url, bytes.NewBufferString(arg))
+		req, err := http.NewRequest(http.MethodPut, url, bytes.NewBufferString(body))
 		if err != nil {
 			onError(err)
 			return
