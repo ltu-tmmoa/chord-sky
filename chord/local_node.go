@@ -1,6 +1,7 @@
 package chord
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -11,6 +12,7 @@ type localNode struct {
 	addr        net.TCPAddr
 	id          ID
 	ftable      *fingerTable
+	succlist    []Node
 	predecessor Node
 }
 
@@ -25,7 +27,7 @@ func newLocalNodeID(addr *net.TCPAddr, id *ID) *localNode {
 		addr: *addr,
 		id:   *id,
 	}
-	node.ftable = newfingerTable(node)
+	node.ftable = newFingerTable(node)
 	return node
 }
 
@@ -58,12 +60,16 @@ func (node *localNode) SetFingerNode(i int, fing Node) <-chan error {
 	})
 }
 
-// Successor yields the next node in this node's ring.
 func (node *localNode) Successor() <-chan NodeErr {
 	return node.FingerNode(1)
 }
 
-// Successor yields the next node in this node's ring.
+func (node *localNode) SuccessorList() <-chan NodesErr {
+	return newChanNodesErr(func() ([]Node, error) {
+		return node.succlist, nil
+	})
+}
+
 func (node *localNode) successor() Node {
 	return node.fingerNode(1)
 }
@@ -133,8 +139,15 @@ func closestPrecedingFinger(n Node, id *ID) (Node, error) {
 	return n, nil
 }
 
-func (node *localNode) SetSuccessor(succ Node) <-chan error {
-	return node.SetFingerNode(1, succ)
+func (node *localNode) SetSuccessorList(succs []Node) <-chan error {
+	return newChanErr(func() error {
+		if len(succs) == 0 {
+			return errors.New("Cannot set empty successor list.")
+		}
+		node.ftable.setFingerNode(1, succs[0])
+		node.succlist = succs
+		return nil
+	})
 }
 
 func (node *localNode) SetPredecessor(pred Node) <-chan error {
@@ -147,8 +160,15 @@ func (node *localNode) SetPredecessor(pred Node) <-chan error {
 func (node *localNode) disassociateNode(n Node) {
 	id := n.ID()
 	node.ftable.removeFingerNodesByID(id)
-	// TODO: Remove from successor list?
-
+	for i, succ := range node.succlist {
+		if succ.ID().Eq(id) {
+			if i < len(node.succlist)-1 {
+				node.succlist = append(node.succlist[:i], node.succlist[i+1:]...)
+			} else {
+				node.succlist = node.succlist[:i]
+			}
+		}
+	}
 	if node.predecessor != nil && node.predecessor.ID().Eq(id) {
 		node.predecessor = nil
 	}

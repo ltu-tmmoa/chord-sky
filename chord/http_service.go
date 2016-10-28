@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"runtime/debug"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/ltu-tmmoa/chord-sky/log"
@@ -135,9 +137,26 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 			if req.Body != nil {
 				req.Body.Close()
 			}
-			id, err := httpReadQueryID(req)
-			if err != nil {
-				httpWrite(w, http.StatusBadRequest, err.Error())
+			var id *ID
+			{
+				var err error
+				id, err = httpReadQueryID(req)
+				if err != nil {
+					httpWrite(w, http.StatusBadRequest, err.Error())
+					return
+				}
+			}
+			if id == nil {
+				succs, err := (<-lnode.SuccessorList()).Unwrap()
+				if err != nil {
+					httpWrite(w, http.StatusFailedDependency, err.Error())
+					return
+				}
+				buf := &bytes.Buffer{}
+				for _, succ := range succs {
+					fmt.Fprintf(buf, "%s\r\n", succ.TCPAddr())
+				}
+				httpWrite(w, http.StatusOK, string(buf.Bytes()))
 				return
 			}
 			node, err := (<-lnode.FindSuccessor(id)).Unwrap()
@@ -156,6 +175,10 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
+			if id == nil {
+				httpWrite(w, http.StatusBadRequest, "Query parameter `id` required.")
+				return
+			}
 			node, err := (<-lnode.FindPredecessor(id)).Unwrap()
 			if err != nil {
 				httpWrite(w, http.StatusFailedDependency, err.Error())
@@ -166,14 +189,21 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		Methods(http.MethodGet)
 
 	router.
-		HandleFunc("/successor", func(w http.ResponseWriter, req *http.Request) {
-			addr, err := httpReadBodyAsAddr(req)
+		HandleFunc("/successors", func(w http.ResponseWriter, req *http.Request) {
+			addrs, err := httpReadBodyAsAddrs(req)
 			if err != nil {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			succ := pool.getOrCreateNode(addr)
-			<-lnode.SetSuccessor(succ)
+			succs := make([]Node, 0, len(addrs))
+			for _, addr := range addrs {
+				succs = append(succs, pool.getOrCreateNode(addr))
+			}
+			err = <-lnode.SetSuccessorList(succs)
+			if err != nil {
+				httpWrite(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)
@@ -223,10 +253,32 @@ func httpReadBodyAsAddr(req *http.Request) (*net.TCPAddr, error) {
 	return net.ResolveTCPAddr("tcp", body)
 }
 
+func httpReadBodyAsAddrs(req *http.Request) ([]*net.TCPAddr, error) {
+	body, err := httpReadBody(req)
+	if err != nil {
+		return nil, err
+	}
+	tokens := strings.Split(body, "\r\n")
+	addrs := make([]*net.TCPAddr, 0, len(tokens))
+	for _, token := range tokens {
+		if len(token) == 0 {
+			continue
+		}
+		addr, err := net.ResolveTCPAddr("tcp", token)
+		if err != nil {
+			return nil, err
+		}
+		if addr != nil {
+			addrs = append(addrs, addr)
+		}
+	}
+	return addrs, nil
+}
+
 func httpReadQueryID(req *http.Request) (*ID, error) {
 	strID := req.URL.Query().Get("id")
 	if len(strID) == 0 {
-		return nil, errors.New("Query parameter `id` required.")
+		return nil, nil
 	}
 	id, ok := ParseID(strID)
 	if !ok {
@@ -258,6 +310,8 @@ func (service *HTTPService) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 	defer func() {
 		if r := recover(); r != nil {
 			http.Error(w, fmt.Sprint(r), http.StatusInternalServerError)
+			log.Logger.Println("Recovered:", r)
+			log.Logger.Println(string(debug.Stack()))
 		}
 	}()
 	log.Logger.Println(req.Method, req.URL)

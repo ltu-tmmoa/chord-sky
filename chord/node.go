@@ -31,6 +31,9 @@ type Node interface {
 	// Successor yields the next node in this node's ring.
 	Successor() <-chan NodeErr
 
+	// SuccessorList yields a list of nodes succeeding the current one.
+	SuccessorList() <-chan NodesErr
+
 	// Predecessor yields the previous node in this node's ring.
 	Predecessor() <-chan NodeErr
 
@@ -40,8 +43,8 @@ type Node interface {
 	// FindPredecessor asks this node to find a predecessor of given ID.
 	FindPredecessor(id *ID) <-chan NodeErr
 
-	// SetSuccessor attempts to set this node's successor to given node.
-	SetSuccessor(succ Node) <-chan error
+	// SetSuccessorList attempts to set this node's successors to given nodes.
+	SetSuccessorList(succs []Node) <-chan error
 
 	// SetPredecessor attempts to set this node's predecessor to given node.
 	SetPredecessor(pred Node) <-chan error
@@ -68,6 +71,29 @@ func newChanNodeErr(f func() (Node, error)) <-chan NodeErr {
 		ch <- NodeErr{
 			Node: node,
 			Err:  err,
+		}
+	}()
+	return ch
+}
+
+// NodesErr represents the result of some fetch operation of nodes.
+type NodesErr struct {
+	Nodes []Node
+	Err   error
+}
+
+// Unwrap returns contained node and error.
+func (ne NodesErr) Unwrap() ([]Node, error) {
+	return ne.Nodes, ne.Err
+}
+
+func newChanNodesErr(f func() ([]Node, error)) <-chan NodesErr {
+	ch := make(chan NodesErr, 1)
+	go func() {
+		nodes, err := f()
+		ch <- NodesErr{
+			Nodes: nodes,
+			Err:   err,
 		}
 	}()
 	return ch

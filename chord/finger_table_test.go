@@ -56,7 +56,7 @@ func TestFingerInterval(t *testing.T) {
 }
 
 func newTable(id int64) *fingerTable {
-	return newfingerTable(&remoteNode{
+	return newFingerTable(&remoteNode{
 		id: *NewID(big.NewInt(id), M3),
 	})
 }

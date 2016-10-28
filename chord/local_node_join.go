@@ -13,7 +13,7 @@ func (node *localNode) join(node0 Node) {
 		node.updateOthers()
 		// TODO: Move keys in (predecessor,n] from successor
 	} else {
-		<-node.SetSuccessor(node)
+		<-node.SetSuccessorList([]Node{node})
 		<-node.SetPredecessor(node)
 	}
 }
@@ -32,15 +32,21 @@ func (node *localNode) initfingerTable(node0 Node) error {
 		if err != nil {
 			return err
 		}
+		succs, err := (<-succ.SuccessorList()).Unwrap()
+		if err != nil {
+			return err
+		}
 		pred, err := (<-succ.Predecessor()).Unwrap()
 		if err != nil {
 			return err
 		}
 
-		<-node.SetSuccessor(succ)
+		succs = append([]Node{succ}, succs...)
+
+		<-node.SetSuccessorList(succs)
 		<-node.SetPredecessor(pred)
 
-		if err = <-pred.SetSuccessor(node); err != nil {
+		if err = <-pred.SetSuccessorList(append([]Node{node}, succs...)); err != nil {
 			return err
 		}
 		if err = <-succ.SetPredecessor(node); err != nil {

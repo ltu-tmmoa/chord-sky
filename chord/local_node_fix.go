@@ -14,7 +14,7 @@ func (node *localNode) stabilize() error {
 		return err
 	}
 	if idIntervalContainsEE(node.ID(), succ.ID(), x.ID()) {
-		<-node.SetSuccessor(x)
+		<-node.SetSuccessorList([]Node{x})
 	}
 	succ = node.successor()
 	return node.notify(succ)

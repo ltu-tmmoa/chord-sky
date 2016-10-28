@@ -61,6 +61,39 @@ func (node *remoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{})
 	})
 }
 
+func (node *remoteNode) httpGetNodesf(pathFormat string, pathArgs ...interface{}) <-chan NodesErr {
+	return newChanNodesErr(func() ([]Node, error) {
+		path := fmt.Sprintf(pathFormat, pathArgs...)
+		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr(), path)
+		res, err := http.Get(url)
+		if err != nil {
+			node.disconnect(err)
+			return nil, err
+		}
+		if res.Body == nil {
+			node.disconnect(errors.New("No body in response."))
+			return nil, err
+		}
+		defer res.Body.Close()
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			node.disconnect(err)
+			return nil, err
+		}
+		tokens := bytes.Split(body, []byte{'\r', '\n'})
+		nodes := make([]Node, 0, len(tokens))
+		for _, token := range tokens {
+			addr, err := net.ResolveTCPAddr("tcp", string(token))
+			if err != nil {
+				node.disconnect(err)
+				return nil, err
+			}
+			nodes = append(nodes, node.pool.getOrCreateNode(addr))
+		}
+		return nodes, nil
+	})
+}
+
 func (node *remoteNode) httpPut(path, body string) <-chan error {
 	return newChanErr(func() error {
 		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr().String(), path)

@@ -1,6 +1,7 @@
 package chord
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 )
@@ -50,6 +51,10 @@ func (node *remoteNode) Successor() <-chan NodeErr {
 	return node.httpGetNodef("successor")
 }
 
+func (node *remoteNode) SuccessorList() <-chan NodesErr {
+	return node.httpGetNodesf("successors")
+}
+
 func (node *remoteNode) Predecessor() <-chan NodeErr {
 	return node.httpGetNodef("predecessor")
 }
@@ -62,8 +67,12 @@ func (node *remoteNode) FindPredecessor(id *ID) <-chan NodeErr {
 	return node.httpGetNodef("predecessors?id=%s", id.String())
 }
 
-func (node *remoteNode) SetSuccessor(succ Node) <-chan error {
-	return node.httpPut("successor", succ.TCPAddr().String())
+func (node *remoteNode) SetSuccessorList(succs []Node) <-chan error {
+	buf := &bytes.Buffer{}
+	for _, succ := range succs {
+		fmt.Fprintf(buf, "%s\r\n", succ.TCPAddr())
+	}
+	return node.httpPut("successors", string(buf.Bytes()))
 }
 
 func (node *remoteNode) SetPredecessor(pred Node) <-chan error {

@@ -12,7 +12,7 @@ type fingerTable struct {
 	fingers []finger
 }
 
-func newfingerTable(owner Node) *fingerTable {
+func newFingerTable(owner Node) *fingerTable {
 	id := owner.ID()
 	fingers := make([]finger, id.Bits()+1)
 	for i := range fingers {
