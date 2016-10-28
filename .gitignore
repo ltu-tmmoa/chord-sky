@@ -18,6 +18,7 @@ _testmain.go
 *.test
 *.prof
 *.out
+/chord-sky
 
 # Project files.
 *.iml
