@@ -26,6 +26,19 @@ func NewID(value *big.Int, bits int) *ID {
 	return id
 }
 
+// ParseID takes a string `s` and convert it into an `*ID`.
+func ParseID(s string) (*ID, bool) {
+	return parseID(s, HashBitsMax)
+}
+
+func parseID(s string, bits int) (*ID, bool) {
+	value := new(big.Int)
+	if _, ok := value.SetString(s, 16); !ok {
+		return nil, false
+	}
+	return NewID(value, bits), true
+}
+
 // Identity creates ID from given object a.
 func Identity(a interface{}) *ID {
 	return identity(a, HashBitsMax)

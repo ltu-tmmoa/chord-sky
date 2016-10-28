@@ -37,3 +37,22 @@ func TestHashDiff(t *testing.T) {
 		t.Errorf("%v.Diff(%v) %v != 4", b, a, r)
 	}
 }
+
+func TestParseID(t *testing.T) {
+	testParseID3 := func(t *testing.T, s string, expectedID int64) {
+		id, ok := parseID(s, M3)
+		if !ok {
+			t.Errorf("Failed to parse ID: %s", s)
+			return
+		}
+		if id.BigInt().Int64() != expectedID {
+			t.Errorf("ID %v != %d", id, expectedID)
+		}
+	}
+
+	testParseID3(t, "-1", 7)
+	testParseID3(t, "0", 0)
+	testParseID3(t, "2", 2)
+	testParseID3(t, "7", 7)
+	testParseID3(t, "9", 1)
+}
