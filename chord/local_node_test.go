@@ -189,7 +189,7 @@ func prepareNodeFingerTests(t *testing.T, node *localNode) (func(int64), func(in
 		}
 	}
 	expectFingerNodeID := func(finger int, nodeID int64) {
-		if n := <-node.FingerNode(finger); !n.ID().Eq(newID64(nodeID, M3)) {
+		if n, _ := (<-node.FingerNode(finger)).Unwrap(); !n.ID().Eq(newID64(nodeID, M3)) {
 			t.Errorf("{%v}.finger(%v).node expected to be %v, was %v.", node, finger, nodeID, n)
 		}
 	}

@@ -84,13 +84,13 @@ func (table *fingerTable) successor(i int) Node {
 //
 // The operation is only defined for i in [1,M], where M is the amount of table
 // rows.
-func (table *fingerTable) setfingerNode(i int, n Node) {
+func (table *fingerTable) setFingerNode(i int, n Node) {
 	table.verifyTableIndexOrPanic(i)
 	table.fingers[i-1].node = n
 }
 
 // Removes all nodes from table matching given ID.
-func (table *fingerTable) removefingerNodesByID(id *ID) {
+func (table *fingerTable) removeFingerNodesByID(id *ID) {
 	for i, fing := range table.fingers {
 		if n := fing.node; n != nil && n.ID().Eq(id) {
 			table.fingers[i].node = nil

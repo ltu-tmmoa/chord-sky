@@ -41,9 +41,9 @@ func (node *localNode) FingerStart(i int) *ID {
 	return node.ftable.fingerStart(i)
 }
 
-func (node *localNode) FingerNode(i int) <-chan Node {
-	return node.getNode(func() Node {
-		return node.fingerNode(i)
+func (node *localNode) FingerNode(i int) <-chan NodeErr {
+	return newChanNodeErr(func() (Node, error) {
+		return node.fingerNode(i), nil
 	})
 }
 
@@ -51,14 +51,15 @@ func (node *localNode) fingerNode(i int) Node {
 	return node.ftable.fingerNode(i)
 }
 
-func (node *localNode) SetfingerNode(i int, fing Node) <-chan *struct{} {
-	return node.getVoid(func() {
-		node.ftable.setfingerNode(i, fing)
+func (node *localNode) SetFingerNode(i int, fing Node) <-chan error {
+	return newChanErr(func() error {
+		node.ftable.setFingerNode(i, fing)
+		return nil
 	})
 }
 
 // Successor yields the next node in this node's ring.
-func (node *localNode) Successor() <-chan Node {
+func (node *localNode) Successor() <-chan NodeErr {
 	return node.FingerNode(1)
 }
 
@@ -67,41 +68,51 @@ func (node *localNode) successor() Node {
 	return node.fingerNode(1)
 }
 
-func (node *localNode) Predecessor() <-chan Node {
-	return node.getNode(func() Node {
+func (node *localNode) Predecessor() <-chan NodeErr {
+	return newChanNodeErr(func() (Node, error) {
 		if node.predecessor == nil {
-			node.predecessor = <-node.FindPredecessor(node.ID())
+			pred, err := (<-node.FindPredecessor(node.ID())).Unwrap()
+			if err != nil {
+				return nil, err
+			}
 			if node.predecessor == nil {
-				node.predecessor = node
+				node.predecessor = pred
 			}
 		}
-		return node.predecessor
+		return node.predecessor, nil
 	})
 }
 
-func (node *localNode) FindSuccessor(id *ID) <-chan Node {
-	return node.getNode(func() Node {
-		node0 := <-node.FindPredecessor(id)
-		if node0 == nil {
-			return nil
+func (node *localNode) FindSuccessor(id *ID) <-chan NodeErr {
+	return newChanNodeErr(func() (Node, error) {
+		pred, err := (<-node.FindPredecessor(id)).Unwrap()
+		if err != nil {
+			return nil, err
 		}
-		return <-node0.Successor()
+		succ, err := (<-pred.Successor()).Unwrap()
+		if err != nil {
+			return nil, err
+		}
+		return succ, nil
 	})
 }
 
-func (node *localNode) FindPredecessor(id *ID) <-chan Node {
-	return node.getNode(func() Node {
+func (node *localNode) FindPredecessor(id *ID) <-chan NodeErr {
+	return newChanNodeErr(func() (Node, error) {
 		var n0 Node
 		n0 = node
 		for {
-			succ := <-n0.Successor()
-			if succ == nil {
-				return nil
+			succ, err := (<-n0.Successor()).Unwrap()
+			if err != nil {
+				return nil, err
 			}
 			if idIntervalContainsEI(n0.ID(), succ.ID(), id) {
-				return n0
+				return n0, nil
 			}
-			n0 = closestPrecedingFinger(n0, id)
+			n0, err = closestPrecedingFinger(n0, id)
+			if err != nil {
+				return nil, err
+			}
 		}
 	})
 }
@@ -109,34 +120,33 @@ func (node *localNode) FindPredecessor(id *ID) <-chan Node {
 // Returns closest finger preceding ID.
 //
 // See Chord paper figure 4.
-func closestPrecedingFinger(n Node, id *ID) Node {
+func closestPrecedingFinger(n Node, id *ID) (Node, error) {
 	for i := n.ID().Bits(); i > 0; i-- {
-		f := <-n.FingerNode(i)
-		if f == nil {
-			return nil
+		f, err := (<-n.FingerNode(i)).Unwrap()
+		if err != nil {
+			return nil, err
 		}
 		if idIntervalContainsEE(n.ID(), id, f.ID()) {
-			return f
+			return f, nil
 		}
 	}
-	return n
+	return n, nil
 }
 
-func (node *localNode) SetSuccessor(succ Node) <-chan *struct{} {
-	return node.getVoid(func() {
-		node.SetfingerNode(1, succ)
-	})
+func (node *localNode) SetSuccessor(succ Node) <-chan error {
+	return node.SetFingerNode(1, succ)
 }
 
-func (node *localNode) SetPredecessor(pred Node) <-chan *struct{} {
-	return node.getVoid(func() {
+func (node *localNode) SetPredecessor(pred Node) <-chan error {
+	return newChanErr(func() error {
 		node.predecessor = pred
+		return nil
 	})
 }
 
 func (node *localNode) disassociateNode(n Node) {
 	id := n.ID()
-	node.ftable.removefingerNodesByID(id)
+	node.ftable.removeFingerNodesByID(id)
 	// TODO: Remove from successor list?
 
 	if node.predecessor != nil && node.predecessor.ID().Eq(id) {
@@ -149,27 +159,19 @@ func (node *localNode) disassociateNode(n Node) {
 // It might take a while before this returns, as it might need to call a lot of
 // remote hosts to gather all required data.
 func (node *localNode) writeRingTextTo(w io.Writer) {
+	var err error
+
 	succ := node.successor()
 	for succ != nil {
 		fmt.Fprintf(w, "%v\r\n", succ)
 		if node.ID().Eq(succ.ID()) {
 			break
 		}
-		succ = <-succ.Successor()
+		succ, err = (<-succ.Successor()).Unwrap()
+		if err != nil {
+			fmt.Fprintf(w, "%v\r\n", err.Error())
+		}
 	}
-}
-
-func (node *localNode) getNode(f func() Node) <-chan Node {
-	ch := make(chan Node, 1)
-	ch <- f()
-	return ch
-}
-
-func (node *localNode) getVoid(f func()) <-chan *struct{} {
-	ch := make(chan *struct{}, 1)
-	f()
-	ch <- nil
-	return ch
 }
 
 // String produces canonical string representation of this node.

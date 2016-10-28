@@ -34,11 +34,11 @@ func (node *remoteNode) FingerStart(i int) *ID {
 	return calcfingerStart(node.ID(), i-1)
 }
 
-func (node *remoteNode) FingerNode(i int) <-chan Node {
+func (node *remoteNode) FingerNode(i int) <-chan NodeErr {
 	return node.httpGetNodef("fingers/%d", i)
 }
 
-func (node *remoteNode) SetfingerNode(i int, fing Node) <-chan *struct{} {
+func (node *remoteNode) SetFingerNode(i int, fing Node) <-chan error {
 	return node.httpPut(fmt.Sprintf("fingers/%d", i), fing.TCPAddr().String())
 }
 
@@ -46,27 +46,27 @@ func (node *remoteNode) Heartbeat() {
 	node.httpHeartbeat("heartbeat")
 }
 
-func (node *remoteNode) Successor() <-chan Node {
+func (node *remoteNode) Successor() <-chan NodeErr {
 	return node.httpGetNodef("successor")
 }
 
-func (node *remoteNode) Predecessor() <-chan Node {
+func (node *remoteNode) Predecessor() <-chan NodeErr {
 	return node.httpGetNodef("predecessor")
 }
 
-func (node *remoteNode) FindSuccessor(id *ID) <-chan Node {
+func (node *remoteNode) FindSuccessor(id *ID) <-chan NodeErr {
 	return node.httpGetNodef("successors?id=%s", id.String())
 }
 
-func (node *remoteNode) FindPredecessor(id *ID) <-chan Node {
+func (node *remoteNode) FindPredecessor(id *ID) <-chan NodeErr {
 	return node.httpGetNodef("predecessors?id=%s", id.String())
 }
 
-func (node *remoteNode) SetSuccessor(succ Node) <-chan *struct{} {
+func (node *remoteNode) SetSuccessor(succ Node) <-chan error {
 	return node.httpPut("successor", succ.TCPAddr().String())
 }
 
-func (node *remoteNode) SetPredecessor(pred Node) <-chan *struct{} {
+func (node *remoteNode) SetPredecessor(pred Node) <-chan error {
 	return node.httpPut("predecessor", pred.TCPAddr().String())
 }
 

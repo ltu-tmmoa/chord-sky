@@ -25,23 +25,27 @@ func (node *localNode) join(node0 Node) {
 // are carried out on a best-effort basis.
 //
 // See Chord paper figure 6.
-func (node *localNode) initfingerTable(node0 Node) {
+func (node *localNode) initfingerTable(node0 Node) error {
 	// Add this node to node0 node's ring.
 	{
-		succ := <-node0.FindSuccessor(node.FingerStart(1))
-		if succ == nil {
-			panic("Failed to resolve successor node.")
+		succ, err := (<-node0.FindSuccessor(node.FingerStart(1))).Unwrap()
+		if err != nil {
+			return err
 		}
-		pred := <-succ.Predecessor()
-		if pred == nil {
-			panic("Failed to resolve predecessor node.")
+		pred, err := (<-succ.Predecessor()).Unwrap()
+		if err != nil {
+			return err
 		}
 
 		<-node.SetSuccessor(succ)
 		<-node.SetPredecessor(pred)
 
-		<-pred.SetSuccessor(node)
-		<-succ.SetPredecessor(node)
+		if err = <-pred.SetSuccessor(node); err != nil {
+			return err
+		}
+		if err = <-succ.SetPredecessor(node); err != nil {
+			return err
+		}
 	}
 	// Update this node's finger table, on best-effort basis.
 	{
@@ -54,14 +58,15 @@ func (node *localNode) initfingerTable(node0 Node) {
 			if idIntervalContainsIE(node.ID(), this.ID(), nextStart) {
 				n = this
 			} else {
-				n = <-node0.FindSuccessor(nextStart)
+				n, _ = (<-node0.FindSuccessor(nextStart)).Unwrap()
 				if n == nil {
 					continue
 				}
 			}
-			<-node.SetfingerNode(i+1, n)
+			<-node.SetFingerNode(i+1, n)
 		}
 	}
+	return nil
 }
 
 // Update all nodes whose finger tables should refer to this node.
@@ -80,11 +85,10 @@ func (node *localNode) updateOthers() {
 
 			id = node.ID().Diff(NewID(&subt, m))
 		}
-		pred := <-node.FindPredecessor(id)
-		if pred == nil {
-			continue
+		pred, _ := (<-node.FindPredecessor(id)).Unwrap()
+		if pred != nil {
+			node.updatefingerTable(pred, node, i)
 		}
-		node.updatefingerTable(pred, node, i)
 	}
 }
 
@@ -94,13 +98,15 @@ func (node *localNode) updateOthers() {
 //
 // See Chord paper figure 6.
 func (node *localNode) updatefingerTable(n, s Node, i int) {
-	fingNode := <-n.FingerNode(i)
+	fingNode, _ := (<-n.FingerNode(i)).Unwrap()
 	if fingNode == nil {
 		return
 	}
 	if idIntervalContainsIE(n.FingerStart(i), fingNode.ID(), s.ID()) {
-		<-n.SetfingerNode(i, s)
-		pred := <-n.Predecessor()
+		if err := <-n.SetFingerNode(i, s); err != nil {
+			return
+		}
+		pred, _ := (<-n.Predecessor()).Unwrap()
 		if pred == nil {
 			return
 		}

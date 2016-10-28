@@ -70,7 +70,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 	router.
 		HandleFunc("/fingers/{i:[0-9]+}", func(w http.ResponseWriter, req *http.Request) {
 			i, _ := strconv.Atoi(mux.Vars(req)["i"])
-			node := <-lnode.FingerNode(i)
+			node, _ := (<-lnode.FingerNode(i)).Unwrap()
 			httpWrite(w, http.StatusOK, node.TCPAddr())
 		}).
 		Methods(http.MethodGet)
@@ -84,7 +84,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				return
 			}
 			node := pool.getOrCreateNode(addr)
-			lnode.SetfingerNode(i, node)
+			<-lnode.SetFingerNode(i, node)
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)
@@ -97,14 +97,14 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 
 	router.
 		HandleFunc("/successor", func(w http.ResponseWriter, req *http.Request) {
-			succ := <-lnode.Successor()
+			succ, _ := (<-lnode.Successor()).Unwrap()
 			httpWrite(w, http.StatusOK, succ.TCPAddr())
 		}).
 		Methods(http.MethodGet)
 
 	router.
 		HandleFunc("/predecessor", func(w http.ResponseWriter, req *http.Request) {
-			pred := <-lnode.Predecessor()
+			pred, _ := (<-lnode.Predecessor()).Unwrap()
 			httpWrite(w, http.StatusOK, pred.TCPAddr())
 		}).
 		Methods(http.MethodGet)
@@ -116,7 +116,11 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			node := <-lnode.FindSuccessor(id)
+			node, err := (<-lnode.FindSuccessor(id)).Unwrap()
+			if err != nil {
+				httpWrite(w, http.StatusFailedDependency, err.Error())
+				return
+			}
 			httpWrite(w, http.StatusOK, node.TCPAddr())
 		}).
 		Methods(http.MethodGet)
@@ -128,7 +132,11 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			node := <-lnode.FindPredecessor(id)
+			node, err := (<-lnode.FindPredecessor(id)).Unwrap()
+			if err != nil {
+				httpWrite(w, http.StatusFailedDependency, err.Error())
+				return
+			}
 			httpWrite(w, http.StatusOK, node.TCPAddr())
 		}).
 		Methods(http.MethodGet)
@@ -141,7 +149,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				return
 			}
 			succ := pool.getOrCreateNode(addr)
-			lnode.SetSuccessor(succ)
+			<-lnode.SetSuccessor(succ)
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)
@@ -154,7 +162,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				return
 			}
 			pred := pool.getOrCreateNode(addr)
-			lnode.SetPredecessor(pred)
+			<-lnode.SetPredecessor(pred)
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)
