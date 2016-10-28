@@ -10,7 +10,7 @@ import (
 //
 // Recommended to be called periodically in order to ensure node data
 // integrity.
-func (node *LocalNode) Stabilize() error {
+func (node *localNode) Stabilize() error {
 	succ := node.successor()
 
 	x := <-succ.Predecessor()
@@ -25,7 +25,7 @@ func (node *LocalNode) Stabilize() error {
 	return nil
 }
 
-func (node *LocalNode) notify(node0 Node) {
+func (node *localNode) notify(node0 Node) {
 	pred := <-node0.Predecessor()
 	if pred == nil || idIntervalContainsEE(pred.ID(), node0.ID(), node.ID()) {
 		<-node0.SetPredecessor(node)
@@ -35,12 +35,12 @@ func (node *LocalNode) notify(node0 Node) {
 // FixRandomFinger refreshes this node's finger table entries in relation to Chord ring changes.
 //
 // Recommended to be called periodically in order to ensure finger table integrity.
-func (node *LocalNode) FixRandomFinger() error {
+func (node *localNode) FixRandomFinger() error {
 	return node.FixFinger((rand.Int() % node.ID().Bits()) + 1)
 }
 
 // FixFinger refreshes finger indicated by given index i.
-func (node *LocalNode) FixFinger(i int) error {
+func (node *localNode) FixFinger(i int) error {
 	succ := <-node.FindSuccessor(node.FingerStart(i))
 	if succ != nil {
 		<-node.SetfingerNode(i, succ)
@@ -50,7 +50,7 @@ func (node *LocalNode) FixFinger(i int) error {
 }
 
 // FixAllFingers refreshes all of this node's finger table entries.
-func (node *LocalNode) FixAllFingers() error {
+func (node *localNode) FixAllFingers() error {
 	for i := range node.ftable.fingers {
 		if err := node.FixFinger(i + 1); err != nil {
 			return err

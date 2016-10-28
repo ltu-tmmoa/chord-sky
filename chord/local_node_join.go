@@ -8,7 +8,7 @@ import "math/big"
 // operations are carried out on a best-effort basis.
 //
 // If given node is nil, this node will form its own ring.
-func (node *LocalNode) Join(node0 Node) {
+func (node *localNode) Join(node0 Node) {
 	if node0 != nil {
 		node.initfingerTable(node0)
 		node.updateOthers()
@@ -26,7 +26,7 @@ func (node *LocalNode) Join(node0 Node) {
 // are carried out on a best-effort basis.
 //
 // See Chord paper figure 6.
-func (node *LocalNode) initfingerTable(node0 Node) {
+func (node *localNode) initfingerTable(node0 Node) {
 	// Add this node to node0 node's ring.
 	{
 		succ := <-node0.FindSuccessor(node.FingerStart(1))
@@ -48,7 +48,7 @@ func (node *LocalNode) initfingerTable(node0 Node) {
 	{
 		m := node.id.Bits()
 		for i := 1; i < m; i++ {
-			this := node.fingerNodeSync(i)
+			this := node.fingerNode(i)
 			nextStart := node.FingerStart(i + 1)
 
 			var n Node
@@ -70,7 +70,7 @@ func (node *LocalNode) initfingerTable(node0 Node) {
 // Operates on a best-effort basis.
 //
 // See Chord paper figure 6.
-func (node *LocalNode) updateOthers() {
+func (node *localNode) updateOthers() {
 	m := node.ID().Bits()
 	for i := 2; i <= m; i++ {
 		var id *ID
@@ -94,7 +94,7 @@ func (node *LocalNode) updateOthers() {
 // Operates on a best-effort basis.
 //
 // See Chord paper figure 6.
-func (node *LocalNode) updatefingerTable(n, s Node, i int) {
+func (node *localNode) updatefingerTable(n, s Node, i int) {
 	fingNode := <-n.FingerNode(i)
 	if fingNode == nil {
 		return

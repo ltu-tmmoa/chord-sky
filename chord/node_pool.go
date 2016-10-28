@@ -8,7 +8,7 @@ import (
 // NodePool holds a single local node and a set of remote nodes, facilitating
 // management of remote node lifetimes.
 type NodePool struct {
-	lnode *LocalNode
+	lnode *localNode
 	nodes map[string]Node
 	mutex sync.Mutex
 }
@@ -51,7 +51,7 @@ func (pool *NodePool) RemoveNode(addr *net.TCPAddr) {
 
 	key := addr.String()
 	if node, ok := pool.nodes[key]; ok && node != pool.lnode {
-		pool.lnode.DisassociateNodeByID(node.ID())
+		pool.lnode.disassociateNode(node)
 		delete(pool.nodes, key)
 	}
 }

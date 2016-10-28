@@ -55,7 +55,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 
 	router.
 		HandleFunc("/info/ring", func(w http.ResponseWriter, req *http.Request) {
-			lnode.WriteRingTextTo(w)
+			lnode.writeRingTextTo(w)
 		}).
 		Methods(http.MethodGet)
 
