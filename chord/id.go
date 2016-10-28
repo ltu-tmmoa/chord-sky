@@ -22,6 +22,7 @@ func NewID(value *big.Int, bits int) *ID {
 	id := new(ID)
 	id.value = *value
 	id.bits = bits
+	id.truncate()
 	return id
 }
 
@@ -31,19 +32,19 @@ func Identity(a interface{}) *ID {
 }
 
 func identity(a interface{}, bits int) *ID {
+	value := new(big.Int)
+	sum := sha1.Sum([]byte(fmt.Sprint(a)))
+	value.SetBytes(sum[:])
+	return NewID(value, bits)
+}
+
+func (id *ID) truncate() {
 	// ceil = 2^bits
 	ceil := big.Int{}
-	ceil.Exp(big.NewInt(2), big.NewInt(int64(bits)), nil)
+	ceil.Exp(big.NewInt(2), big.NewInt(int64(id.bits)), nil)
 
-	// sum = sha1(a)
-	sum := sha1.Sum([]byte(fmt.Sprint(a)))
-
-	// value = sum % ceil
-	value := big.Int{}
-	value.SetBytes(sum[:])
-	value.Mod(&value, &ceil)
-
-	return NewID(&value, bits)
+	// id = id % ceil
+	id.value.Mod(&id.value, &ceil)
 }
 
 // BigInt turns id into big.Int representation.
@@ -64,18 +65,12 @@ func (id *ID) Cmp(other *ID) int {
 // Diff calculates the difference between this id and given ID.
 func (id *ID) Diff(other *ID) *ID {
 	diff := new(ID)
+	diff.bits = id.bits
 
 	// diff = id - other
 	diff.value.Sub(&id.value, other.BigInt())
 
-	// ceil = 2^bits
-	ceil := big.Int{}
-	ceil.Exp(big.NewInt(2), big.NewInt(int64(id.bits)), nil)
-
-	// diff = diff % ceil
-	diff.value.Mod(&diff.value, &ceil)
-
-	diff.bits = id.bits
+	diff.truncate()
 	return diff
 }
 
