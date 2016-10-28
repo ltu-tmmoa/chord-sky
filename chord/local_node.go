@@ -179,9 +179,9 @@ func (node *LocalNode) SetPredecessor(pred Node) {
 	node.predecessor = pred
 }
 
-// DisassociateNodesByID removes any references held to node with an ID
+// DisassociateNodeByID removes any references held to node with an ID
 // equivalent to given.
-func (node *LocalNode) DisassociateNodesByID(id *ID) {
+func (node *LocalNode) DisassociateNodeByID(id *ID) {
 	node.mutex.Lock()
 	defer node.mutex.Unlock()
 
