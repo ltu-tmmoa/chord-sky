@@ -9,7 +9,7 @@ import (
 type RemoteNode struct {
 	addr net.TCPAddr
 	id   ID
-	// TODO: Node pool?
+	pool *NodePool
 }
 
 // NewRemoteNode creates a new remote node from given address and
@@ -22,10 +22,11 @@ type RemoteNode struct {
 //
 // The `onDisconnect` function may be passed on to other remote nodes by this
 // node.
-func NewRemoteNode(addr *net.TCPAddr) *RemoteNode {
+func NewRemoteNode(addr *net.TCPAddr, pool *NodePool) *RemoteNode {
 	return &RemoteNode{
 		addr: *addr,
 		id:   *Identity(addr),
+		pool: pool,
 	}
 }
 

@@ -14,7 +14,8 @@ import (
 func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{}) <-chan Node {
 	ch := make(chan Node, 1)
 	onError := func(err error) {
-		log.Logger.Print(err.Error())
+		node.pool.RemoveNode(node.TCPAddr())
+		log.Logger.Printf("Node %s disconnected. Reason: %s", node.String(), err.Error())
 		ch <- nil
 	}
 	go func() {
@@ -40,14 +41,15 @@ func (node *RemoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{})
 			onError(err)
 			return
 		}
-		ch <- NewRemoteNode(addr)
+		ch <- node.pool.GetOrCreateNode(addr)
 	}()
 	return ch
 }
 
 func (node *RemoteNode) httpPut(path, body string) {
 	onError := func(err error) {
-		log.Logger.Print(err.Error())
+		node.pool.RemoveNode(node.TCPAddr())
+		log.Logger.Printf("Node %s disconnected. Reason: %s", node.String(), err.Error())
 	}
 	go func() {
 		url := fmt.Sprintf("http://%s/node/%s", node.TCPAddr().String(), path)
