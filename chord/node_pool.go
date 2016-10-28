@@ -5,19 +5,17 @@ import (
 	"sync"
 )
 
-// NodePool holds a single local node and a set of remote nodes, facilitating
-// management of remote node lifetimes.
-type NodePool struct {
+// Holds a single local node and a set of remote nodes, allowing management of
+// remote node lifetimes.
+type nodePool struct {
 	lnode *localNode
 	nodes map[string]Node
 	mutex sync.Mutex
 }
 
-// NewNodePool creates a new pool of a single local node with the given local
-// interface address.
-func NewNodePool(laddr *net.TCPAddr) *NodePool {
+func newNodePool(laddr *net.TCPAddr) *nodePool {
 	lnode := newLocalNode(laddr)
-	return &NodePool{
+	return &nodePool{
 		lnode: lnode,
 		nodes: map[string]Node{
 			laddr.String(): lnode,
@@ -25,9 +23,7 @@ func NewNodePool(laddr *net.TCPAddr) *NodePool {
 	}
 }
 
-// GetOrCreateNode gets existing node with same address, or creates a new one
-// if no such is already known.
-func (pool *NodePool) GetOrCreateNode(addr *net.TCPAddr) Node {
+func (pool *nodePool) getOrCreateNode(addr *net.TCPAddr) Node {
 	pool.mutex.Lock()
 	defer pool.mutex.Unlock()
 
@@ -40,12 +36,7 @@ func (pool *NodePool) GetOrCreateNode(addr *net.TCPAddr) Node {
 	return node
 }
 
-// RemoveNode removes node from pool with an `addr` matching given, if present.
-//
-// Removed nodes are always disassociated with the local node.
-//
-// Attempts at removing the local node from the pool will be ignored.
-func (pool *NodePool) RemoveNode(addr *net.TCPAddr) {
+func (pool *nodePool) removeNode(addr *net.TCPAddr) {
 	pool.mutex.Lock()
 	defer pool.mutex.Unlock()
 
@@ -56,8 +47,7 @@ func (pool *NodePool) RemoveNode(addr *net.TCPAddr) {
 	}
 }
 
-// Refresh causes a hearbeat message to be sent to each remote node in pool.
-func (pool *NodePool) Refresh() error {
+func (pool *nodePool) refresh() error {
 	defer func() {
 		for _, node := range pool.nodes {
 			rnode, ok := node.(*remoteNode)

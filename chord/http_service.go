@@ -20,7 +20,7 @@ var (
 // HTTPService manages a local Chord node, exposing it as an HTTP service by
 // implementing the http.Handler interface.
 type HTTPService struct {
-	pool     *NodePool
+	pool     *nodePool
 	router   *mux.Router
 	isJoined bool
 }
@@ -29,7 +29,7 @@ type HTTPService struct {
 // identified local TCP interface.
 func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 	service := HTTPService{
-		pool:   NewNodePool(laddr),
+		pool:   newNodePool(laddr),
 		router: mux.NewRouter(),
 	}
 
@@ -83,7 +83,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			node := pool.GetOrCreateNode(addr)
+			node := pool.getOrCreateNode(addr)
 			lnode.SetfingerNode(i, node)
 			w.WriteHeader(http.StatusNoContent)
 		}).
@@ -140,7 +140,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			succ := pool.GetOrCreateNode(addr)
+			succ := pool.getOrCreateNode(addr)
 			lnode.SetSuccessor(succ)
 			w.WriteHeader(http.StatusNoContent)
 		}).
@@ -153,7 +153,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			pred := pool.GetOrCreateNode(addr)
+			pred := pool.getOrCreateNode(addr)
 			lnode.SetPredecessor(pred)
 			w.WriteHeader(http.StatusNoContent)
 		}).
@@ -209,7 +209,7 @@ func httpReadQueryID(req *http.Request) (*ID, error) {
 func (service *HTTPService) Join(addr *net.TCPAddr) {
 	var peer Node
 	if addr != nil {
-		peer = service.pool.GetOrCreateNode(addr)
+		peer = service.pool.getOrCreateNode(addr)
 	}
 	service.pool.lnode.Join(peer)
 }
@@ -219,7 +219,7 @@ func (service *HTTPService) Join(addr *net.TCPAddr) {
 // This method should be called at sensible intervals in order for the service
 // to maintain its integrity.
 func (service *HTTPService) Refresh() error {
-	return service.pool.Refresh()
+	return service.pool.refresh()
 }
 
 func (service *HTTPService) ServeHTTP(w http.ResponseWriter, req *http.Request) {

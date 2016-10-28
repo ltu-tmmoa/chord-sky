@@ -9,10 +9,10 @@ import (
 type remoteNode struct {
 	addr net.TCPAddr
 	id   ID
-	pool *NodePool
+	pool *nodePool
 }
 
-func newRemoteNode(addr *net.TCPAddr, pool *NodePool) *remoteNode {
+func newRemoteNode(addr *net.TCPAddr, pool *nodePool) *remoteNode {
 	return &remoteNode{
 		addr: *addr,
 		id:   *hashAddr(addr),
