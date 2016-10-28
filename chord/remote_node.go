@@ -47,7 +47,7 @@ func (node *RemoteNode) TCPAddr() *net.TCPAddr {
 func (node *RemoteNode) FingerStart(i int) *ID {
 	m := node.ID().Bits()
 	verifyIndexOrPanic(m, i)
-	return calcFingerStart(node.ID(), i-1)
+	return calcfingerStart(node.ID(), i-1)
 }
 
 // FingerNode resolves Chord node at given finger table offset i.
@@ -58,11 +58,11 @@ func (node *RemoteNode) FingerNode(i int) <-chan Node {
 	return node.httpGetNodef("fingers/%d", i)
 }
 
-// SetFingerNode attempts to set this node's ith finger to given node.
+// SetfingerNode attempts to set this node's ith finger to given node.
 //
 // The operation is only valid for i in [1,M], where M is the amount of
 // bits set at node ring creation.
-func (node *RemoteNode) SetFingerNode(i int, fing Node) <-chan *struct{} {
+func (node *RemoteNode) SetfingerNode(i int, fing Node) <-chan *struct{} {
 	return node.httpPut(fmt.Sprintf("fingers/%d", i), fing.TCPAddr().String())
 }
 

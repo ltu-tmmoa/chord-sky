@@ -10,23 +10,23 @@ type Node interface {
 	// TCPAddr provides node network address.
 	TCPAddr() *net.TCPAddr
 
-	// FingerStart resolves start ID of finger table entry i.
+	// fingerStart resolves start ID of finger table entry i.
 	//
 	// The result is only defined for i in [1,M], where M is the amount of bits
 	// set at node ring creation.
 	FingerStart(i int) *ID
 
-	// FingerNode resolves Chord node at given finger table offset i.
+	// fingerNode resolves Chord node at given finger table offset i.
 	//
 	// The result is only defined for i in [1,M], where M is the amount of bits
 	// set at node ring creation.
 	FingerNode(i int) <-chan Node
 
-	// SetFingerNode attempts to set this node's ith finger to given node.
+	// SetfingerNode attempts to set this node's ith finger to given node.
 	//
 	// The operation is only valid for i in [1,M], where M is the amount of
 	// bits set at node ring creation.
-	SetFingerNode(i int, fing Node) <-chan *struct{}
+	SetfingerNode(i int, fing Node) <-chan *struct{}
 
 	// Successor yields the next node in this node's ring.
 	Successor() <-chan Node

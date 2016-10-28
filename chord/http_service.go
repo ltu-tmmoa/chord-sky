@@ -84,7 +84,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				return
 			}
 			node := pool.GetOrCreateNode(addr)
-			lnode.SetFingerNode(i, node)
+			lnode.SetfingerNode(i, node)
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)

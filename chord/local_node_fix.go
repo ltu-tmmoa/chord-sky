@@ -43,7 +43,7 @@ func (node *LocalNode) FixRandomFinger() error {
 func (node *LocalNode) FixFinger(i int) error {
 	succ := <-node.FindSuccessor(node.FingerStart(i))
 	if succ != nil {
-		<-node.SetFingerNode(i, succ)
+		<-node.SetfingerNode(i, succ)
 		return nil
 	}
 	return fmt.Errorf("Finger %d fix failed. Unable to resolve its successor node.", i)
@@ -51,7 +51,7 @@ func (node *LocalNode) FixFinger(i int) error {
 
 // FixAllFingers refreshes all of this node's finger table entries.
 func (node *LocalNode) FixAllFingers() error {
-	for i := range node.fingerTable.fingers {
+	for i := range node.ftable.fingers {
 		if err := node.FixFinger(i + 1); err != nil {
 			return err
 		}

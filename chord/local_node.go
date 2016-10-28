@@ -10,7 +10,7 @@ import (
 type LocalNode struct {
 	addr        net.TCPAddr
 	id          ID
-	fingerTable *FingerTable
+	ftable      *fingerTable
 	predecessor Node
 }
 
@@ -25,7 +25,7 @@ func newLocalNode(addr *net.TCPAddr, id *ID) *LocalNode {
 		addr: *addr,
 		id:   *id,
 	}
-	node.fingerTable = newFingerTable(node)
+	node.ftable = newfingerTable(node)
 	return node
 }
 
@@ -44,7 +44,7 @@ func (node *LocalNode) TCPAddr() *net.TCPAddr {
 // The result is only defined for i in [1,M], where M is the amount of bits set
 // at node ring creation.
 func (node *LocalNode) FingerStart(i int) *ID {
-	return node.fingerTable.FingerStart(i)
+	return node.ftable.fingerStart(i)
 }
 
 // FingerNode resolves Chord node at given finger table offset i.
@@ -53,12 +53,12 @@ func (node *LocalNode) FingerStart(i int) *ID {
 // at node ring creation.
 func (node *LocalNode) FingerNode(i int) <-chan Node {
 	return node.getNode(func() Node {
-		return node.fingerNode(i)
+		return node.fingerNodeSync(i)
 	})
 }
 
-func (node *LocalNode) fingerNode(i int) Node {
-	return node.fingerTable.FingerNode(i)
+func (node *LocalNode) fingerNodeSync(i int) Node {
+	return node.ftable.fingerNode(i)
 }
 
 func (node *LocalNode) getNode(f func() Node) <-chan Node {
@@ -67,13 +67,13 @@ func (node *LocalNode) getNode(f func() Node) <-chan Node {
 	return ch
 }
 
-// SetFingerNode attempts to set this node's ith finger to given node.
+// SetfingerNode attempts to set this node's ith finger to given node.
 //
 // The operation is only valid for i in [1,M], where M is the amount of
 // bits set at node ring creation.
-func (node *LocalNode) SetFingerNode(i int, fing Node) <-chan *struct{} {
+func (node *LocalNode) SetfingerNode(i int, fing Node) <-chan *struct{} {
 	return node.getVoid(func() {
-		node.fingerTable.SetFingerNode(i, fing)
+		node.ftable.setfingerNode(i, fing)
 	})
 }
 
@@ -84,8 +84,8 @@ func (node *LocalNode) getVoid(f func()) <-chan *struct{} {
 	return ch
 }
 
-func (node *LocalNode) setFingerNodeUnlocked(i int, fing Node) {
-	node.fingerTable.SetFingerNode(i, fing)
+func (node *LocalNode) setfingerNodeUnlocked(i int, fing Node) {
+	node.ftable.setfingerNode(i, fing)
 }
 
 // Successor yields the next node in this node's ring.
@@ -95,7 +95,7 @@ func (node *LocalNode) Successor() <-chan Node {
 
 // Successor yields the next node in this node's ring.
 func (node *LocalNode) successor() Node {
-	return node.fingerNode(1)
+	return node.fingerNodeSync(1)
 }
 
 // Predecessor yields the previous node in this node's ring.
@@ -163,7 +163,7 @@ func closestPrecedingFinger(n Node, id *ID) Node {
 // SetSuccessor attempts to set this node's successor to given node.
 func (node *LocalNode) SetSuccessor(succ Node) <-chan *struct{} {
 	return node.getVoid(func() {
-		node.SetFingerNode(1, succ)
+		node.SetfingerNode(1, succ)
 	})
 }
 
@@ -177,7 +177,7 @@ func (node *LocalNode) SetPredecessor(pred Node) <-chan *struct{} {
 // DisassociateNodeByID removes any references held to node with an ID
 // equivalent to given.
 func (node *LocalNode) DisassociateNodeByID(id *ID) {
-	node.fingerTable.RemoveFingerNodesByID(id)
+	node.ftable.removefingerNodesByID(id)
 	// TODO: Remove from successor list?
 
 	if node.predecessor != nil && node.predecessor.ID().Eq(id) {

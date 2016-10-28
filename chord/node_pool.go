@@ -16,7 +16,7 @@ type NodePool struct {
 // NewNodePool creates a new pool of a single local node with the given local
 // interface address.
 func NewNodePool(laddr *net.TCPAddr) *NodePool {
-	lnode := NewLocalNode(laddr)
+	lnode := newLocalNode(laddr)
 	return &NodePool{
 		lnode: lnode,
 		nodes: map[string]Node{
