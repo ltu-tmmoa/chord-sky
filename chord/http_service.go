@@ -1,6 +1,7 @@
 package chord
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -32,9 +33,26 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 	}
 
 	pool := service.pool
+	router := service.router
 	lnode := pool.lnode
 
-	service.router.
+	router.
+		HandleFunc("/info", func(w http.ResponseWriter, req *http.Request) {
+			buf := &bytes.Buffer{}
+			fmt.Fprintf(buf, "ID:          %s\r\n", lnode.ID())
+			fmt.Fprintf(buf, "Successor:   %s\r\n", <-lnode.Successor())
+			fmt.Fprintf(buf, "Predecessor: %s\r\n", <-lnode.Predecessor())
+
+			fmt.Fprint(buf, "\r\nFinger Table:\r\n")
+			m := lnode.ID().Bits()
+			for i := 1; i <= m; i++ {
+				fmt.Fprintf(buf, "%3d:         %s\r\n", i, <-lnode.FingerNode(i))
+			}
+			w.Write(buf.Bytes())
+		}).
+		Methods(http.MethodGet)
+
+	router.
 		HandleFunc("/fingers/{i:[0-9]+}", func(w http.ResponseWriter, req *http.Request) {
 			i, _ := strconv.Atoi(mux.Vars(req)["i"])
 			node := <-lnode.FingerNode(i)
@@ -42,7 +60,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		}).
 		Methods(http.MethodGet)
 
-	service.router.
+	router.
 		HandleFunc("/fingers/{i:[0-9]+}", func(w http.ResponseWriter, req *http.Request) {
 			i, _ := strconv.Atoi(mux.Vars(req)["i"])
 			addr, err := httpReadBodyAsAddr(req)
@@ -56,21 +74,21 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		}).
 		Methods(http.MethodPut)
 
-	service.router.
+	router.
 		HandleFunc("/successor", func(w http.ResponseWriter, req *http.Request) {
 			succ := <-lnode.Successor()
 			httpWrite(w, http.StatusOK, succ.TCPAddr())
 		}).
 		Methods(http.MethodGet)
 
-	service.router.
+	router.
 		HandleFunc("/predecessor", func(w http.ResponseWriter, req *http.Request) {
 			pred := <-lnode.Predecessor()
 			httpWrite(w, http.StatusOK, pred.TCPAddr())
 		}).
 		Methods(http.MethodGet)
 
-	service.router.
+	router.
 		HandleFunc("/successors", func(w http.ResponseWriter, req *http.Request) {
 			id, err := httpReadQueryID(req)
 			if err != nil {
@@ -82,7 +100,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		}).
 		Methods(http.MethodGet)
 
-	service.router.
+	router.
 		HandleFunc("/predecessors", func(w http.ResponseWriter, req *http.Request) {
 			id, err := httpReadQueryID(req)
 			if err != nil {
@@ -94,7 +112,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		}).
 		Methods(http.MethodGet)
 
-	service.router.
+	router.
 		HandleFunc("/successor", func(w http.ResponseWriter, req *http.Request) {
 			addr, err := httpReadBodyAsAddr(req)
 			if err != nil {
@@ -107,7 +125,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		}).
 		Methods(http.MethodPut)
 
-	service.router.
+	router.
 		HandleFunc("/predecessor", func(w http.ResponseWriter, req *http.Request) {
 			addr, err := httpReadBodyAsAddr(req)
 			if err != nil {
