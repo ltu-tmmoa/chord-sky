@@ -57,10 +57,10 @@ func (pool *nodePool) refresh() error {
 		}
 	}()
 
-	if err := pool.lnode.Stabilize(); err != nil {
+	if err := pool.lnode.stabilize(); err != nil {
 		return err
 	}
-	if err := pool.lnode.FixRandomFinger(); err != nil {
+	if err := pool.lnode.fixRandomFinger(); err != nil {
 		return err
 	}
 	return nil

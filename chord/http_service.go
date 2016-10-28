@@ -61,7 +61,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 
 	router.
 		HandleFunc("/info/fix", func(w http.ResponseWriter, req *http.Request) {
-			if err := lnode.FixAllFingers(); err != nil {
+			if err := lnode.fixAllFingers(); err != nil {
 				panic(err)
 			}
 		}).
@@ -211,7 +211,7 @@ func (service *HTTPService) Join(addr *net.TCPAddr) {
 	if addr != nil {
 		peer = service.pool.getOrCreateNode(addr)
 	}
-	service.pool.lnode.Join(peer)
+	service.pool.lnode.join(peer)
 }
 
 // Refresh causes the HTTP service to refresh its data.

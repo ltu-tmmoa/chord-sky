@@ -5,11 +5,11 @@ import "testing"
 func TestNodeJoin2(t *testing.T) {
 	nodes := prepareNodes(0, 1)
 
-	nodes[0].Join(nil)
-	nodes[1].Join(nodes[0])
+	nodes[0].join(nil)
+	nodes[1].join(nodes[0])
 
 	for _, node := range nodes {
-		node.FixAllFingers()
+		node.fixAllFingers()
 	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
@@ -30,12 +30,12 @@ func TestNodeJoin2(t *testing.T) {
 func TestNodeJoin3(t *testing.T) {
 	nodes := prepareNodes(0, 1, 3)
 
-	nodes[0].Join(nil)
-	nodes[1].Join(nodes[0])
-	nodes[2].Join(nodes[1])
+	nodes[0].join(nil)
+	nodes[1].join(nodes[0])
+	nodes[2].join(nodes[1])
 
 	for _, node := range nodes {
-		node.FixAllFingers()
+		node.fixAllFingers()
 	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
@@ -63,13 +63,13 @@ func TestNodeJoin3(t *testing.T) {
 func TestNodeJoin4(t *testing.T) {
 	nodes := prepareNodes(0, 1, 3, 6)
 
-	nodes[0].Join(nil)
-	nodes[1].Join(nodes[0])
-	nodes[2].Join(nodes[1])
-	nodes[3].Join(nodes[2])
+	nodes[0].join(nil)
+	nodes[1].join(nodes[0])
+	nodes[2].join(nodes[1])
+	nodes[3].join(nodes[2])
 
 	for _, node := range nodes {
-		node.FixAllFingers()
+		node.fixAllFingers()
 	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])
@@ -104,17 +104,17 @@ func TestNodeJoin4(t *testing.T) {
 func TestNodeJoin8(t *testing.T) {
 	nodes := prepareNodes(0, 1, 2, 3, 4, 5, 6, 7)
 
-	nodes[0].Join(nil)
-	nodes[1].Join(nodes[0])
-	nodes[2].Join(nodes[1])
-	nodes[3].Join(nodes[1])
-	nodes[4].Join(nodes[1])
-	nodes[5].Join(nodes[4])
-	nodes[6].Join(nodes[3])
-	nodes[7].Join(nodes[3])
+	nodes[0].join(nil)
+	nodes[1].join(nodes[0])
+	nodes[2].join(nodes[1])
+	nodes[3].join(nodes[1])
+	nodes[4].join(nodes[1])
+	nodes[5].join(nodes[4])
+	nodes[6].join(nodes[3])
+	nodes[7].join(nodes[3])
 
 	for _, node := range nodes {
-		node.FixAllFingers()
+		node.fixAllFingers()
 	}
 	{
 		expectPredecessorID, expectFingerNodeID := prepareNodeFingerTests(t, nodes[0])

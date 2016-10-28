@@ -4,11 +4,10 @@ import "math/big"
 
 // Join makes this node join the ring of given other node.
 //
-// Returns error only if failing to resolve successor or predecessor. All other
-// operations are carried out on a best-effort basis.
-//
 // If given node is nil, this node will form its own ring.
-func (node *localNode) Join(node0 Node) {
+//
+// See Chord paper figure 6.
+func (node *localNode) join(node0 Node) {
 	if node0 != nil {
 		node.initfingerTable(node0)
 		node.updateOthers()
