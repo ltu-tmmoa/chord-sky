@@ -1,8 +1,5 @@
-FROM golang:alpine
+FROM golang:1.7
 
-COPY . /go/src/github.com/ltu-tmmoa/chord-sky
-RUN go install github.com/ltu-tmmoa/chord-sky
-
-ENTRYPOINT ["/go/bin/chord-sky"]
+COPY chord-sky /go/bin/
 
 EXPOSE 8080
