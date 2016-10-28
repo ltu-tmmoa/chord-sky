@@ -16,27 +16,17 @@ func newFingerTable(id *ID) FingerTable {
 	return FingerTable(fingers)
 }
 
-// (n + 2^i) mod (2^m)
+// n + 2^i
 func calcFingerStart(id *ID, i int) *ID {
 	n := id.BigInt()
-	m := big.NewInt(int64(id.Bits()))
-	two := big.NewInt(2)
 
 	// addend = 2^i
 	addend := big.Int{}
-	addend.Exp(two, big.NewInt(int64(i)), nil)
+	addend.Exp(big.NewInt(2), big.NewInt(int64(i)), nil)
 
-	// sum = n + addend
-	sum := big.Int{}
-	sum.Add(n, &addend)
-
-	// ceil = 2^m
-	ceil := big.Int{}
-	ceil.Exp(two, m, nil)
-
-	// result = sum % ceil
+	// result = n + addend
 	result := big.Int{}
-	result.Mod(&sum, &ceil)
+	result.Add(n, &addend)
 
 	return NewID(&result, id.Bits())
 }
