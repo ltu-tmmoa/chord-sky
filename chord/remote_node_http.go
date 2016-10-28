@@ -13,7 +13,7 @@ import (
 
 func (node *remoteNode) httpHeartbeat(path string) {
 	onError := func(err error) {
-		node.pool.removeNode(node.TCPAddr())
+		node.pool.removeNode(node)
 		log.Logger.Printf("Node %s hearbeat failure: %s", node, err.Error())
 	}
 	go func() {
@@ -40,7 +40,7 @@ func (node *remoteNode) httpHeartbeat(path string) {
 func (node *remoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{}) <-chan Node {
 	ch := make(chan Node, 1)
 	onError := func(err error) {
-		node.pool.removeNode(node.TCPAddr())
+		node.pool.removeNode(node)
 		log.Logger.Printf("Node %s disconnected: %s", node.String(), err.Error())
 		ch <- nil
 	}
@@ -75,7 +75,7 @@ func (node *remoteNode) httpGetNodef(pathFormat string, pathArgs ...interface{})
 func (node *remoteNode) httpPut(path, body string) <-chan *struct{} {
 	ch := make(chan *struct{}, 1)
 	onError := func(err error) {
-		node.pool.removeNode(node.TCPAddr())
+		node.pool.removeNode(node)
 		log.Logger.Printf("Node %s disconnected: %s", node.String(), err.Error())
 		ch <- nil
 	}

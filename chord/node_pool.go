@@ -36,11 +36,11 @@ func (pool *nodePool) getOrCreateNode(addr *net.TCPAddr) Node {
 	return node
 }
 
-func (pool *nodePool) removeNode(addr *net.TCPAddr) {
+func (pool *nodePool) removeNode(node Node) {
 	pool.mutex.Lock()
 	defer pool.mutex.Unlock()
 
-	key := addr.String()
+	key := node.TCPAddr().String()
 	if node, ok := pool.nodes[key]; ok && node != pool.lnode {
 		pool.lnode.disassociateNode(node)
 		delete(pool.nodes, key)
