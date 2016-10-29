@@ -3,13 +3,16 @@ package chord
 import (
 	"fmt"
 	"net"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
 )
 
 // Represents some Chord node available remotely.
 type remoteNode struct {
-	addr net.TCPAddr
-	id   ID
-	pool *nodePool
+	addr    net.TCPAddr
+	id      ID
+	pool    *nodePool
+	storage data.Storage
 }
 
 func newRemoteNode(addr *net.TCPAddr, pool *nodePool) *remoteNode {
@@ -72,6 +75,10 @@ func (node *remoteNode) SetSuccessor(succ Node) error {
 
 func (node *remoteNode) SetPredecessor(pred Node) error {
 	return node.httpPut("predecessor", pred.TCPAddr().String())
+}
+
+func (node *remoteNode) Storage() data.Storage {
+	return node.storage
 }
 
 func (node *remoteNode) String() string {

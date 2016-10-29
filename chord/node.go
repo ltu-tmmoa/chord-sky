@@ -1,6 +1,10 @@
 package chord
 
-import "net"
+import (
+	"net"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
+)
 
 // Node represents some Chord node, available either locally or remotely.
 type Node interface {
@@ -48,6 +52,9 @@ type Node interface {
 
 	// SetPredecessor attempts to set this node's predecessor to given node.
 	SetPredecessor(pred Node) error
+
+	// Storage exposes the data held by the node.
+	Storage() data.Storage
 
 	// String turns Node into its canonical string representation.
 	String() string

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
 )
 
 // localNode represents a potential member of a Chord ring.
@@ -13,6 +15,7 @@ type localNode struct {
 	ftable      *fingerTable
 	succlist    []Node
 	predecessor Node
+	storage     data.Storage
 }
 
 // NewLocalNode creates a new local node from given address, which ought to be
@@ -23,8 +26,9 @@ func newLocalNode(addr *net.TCPAddr) *localNode {
 
 func newLocalNodeID(addr *net.TCPAddr, id *ID) *localNode {
 	node := &localNode{
-		addr: *addr,
-		id:   *id,
+		addr:    *addr,
+		id:      *id,
+		storage: new(data.MemoryStorage),
 	}
 	node.ftable = newFingerTable(node)
 	return node
@@ -160,6 +164,10 @@ func (node *localNode) setSuccessorList(succs []Node) error {
 func (node *localNode) SetPredecessor(pred Node) error {
 	node.predecessor = pred
 	return nil
+}
+
+func (node *localNode) Storage() data.Storage {
+	return node.storage
 }
 
 func (node *localNode) disassociateNode(n Node) {
