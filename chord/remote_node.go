@@ -16,11 +16,13 @@ type remoteNode struct {
 }
 
 func newRemoteNode(addr *net.TCPAddr, pool *nodePool) *remoteNode {
-	return &remoteNode{
+	node := &remoteNode{
 		addr: *addr,
 		id:   *addrToID(addr),
 		pool: pool,
 	}
+	node.storage = newRemoteStorage(node)
+	return node
 }
 
 func (node *remoteNode) ID() *data.ID {
