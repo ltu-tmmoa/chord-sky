@@ -152,10 +152,9 @@ func (node *localNode) setSuccessorList(succs []Node) error {
 		}
 	}
 	for _, nsucc := range nsuccs {
-		fmt.Println("Sending data to", nsucc)
-		go func() {
-			// TODO: Backup data with nsucc.
-		}()
+		if err := node.uploadStorageTo(nsucc); err != nil {
+			return err
+		}
 	}
 	node.succlist = succs
 	return nil

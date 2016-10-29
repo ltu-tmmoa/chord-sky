@@ -15,7 +15,9 @@ func (node *localNode) join(node0 Node) {
 	if node0 != nil {
 		node.initfingerTable(node0)
 		node.updateOthers()
-		// TODO: Move keys in (predecessor,n] from successor
+		if err := node.downloadStorageOf(node.successor()); err != nil {
+			log.Logger.Println("Failed to download storage.", err.Error())
+		}
 	} else {
 		node.SetSuccessor(node)
 		node.SetPredecessor(node)
