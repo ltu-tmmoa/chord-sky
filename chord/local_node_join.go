@@ -1,6 +1,10 @@
 package chord
 
-import "math/big"
+import (
+	"math/big"
+
+	"github.com/ltu-tmmoa/chord-sky/log"
+)
 
 // Join makes this node join the ring of given other node.
 //
@@ -13,8 +17,8 @@ func (node *localNode) join(node0 Node) {
 		node.updateOthers()
 		// TODO: Move keys in (predecessor,n] from successor
 	} else {
-		<-node.SetSuccessorList([]Node{node})
-		<-node.SetPredecessor(node)
+		node.SetSuccessor(node)
+		node.SetPredecessor(node)
 	}
 }
 
@@ -28,28 +32,22 @@ func (node *localNode) join(node0 Node) {
 func (node *localNode) initfingerTable(node0 Node) error {
 	// Add this node to node0 node's ring.
 	{
-		succ, err := (<-node0.FindSuccessor(node.FingerStart(1))).Unwrap()
+		succ, err := node0.FindSuccessor(node.FingerStart(1))
 		if err != nil {
 			return err
 		}
-		succs, err := (<-succ.SuccessorList()).Unwrap()
-		if err != nil {
-			return err
-		}
-		pred, err := (<-succ.Predecessor()).Unwrap()
+		pred, err := succ.Predecessor()
 		if err != nil {
 			return err
 		}
 
-		succs = append([]Node{succ}, succs...)
+		node.SetSuccessor(succ)
+		node.SetPredecessor(pred)
 
-		<-node.SetSuccessorList(succs)
-		<-node.SetPredecessor(pred)
-
-		if err = <-pred.SetSuccessorList(append([]Node{node}, succs...)); err != nil {
+		if err = pred.SetSuccessor(node); err != nil {
 			return err
 		}
-		if err = <-succ.SetPredecessor(node); err != nil {
+		if err = succ.SetPredecessor(node); err != nil {
 			return err
 		}
 	}
@@ -64,12 +62,12 @@ func (node *localNode) initfingerTable(node0 Node) error {
 			if idIntervalContainsIE(node.ID(), this.ID(), nextStart) {
 				n = this
 			} else {
-				n, _ = (<-node0.FindSuccessor(nextStart)).Unwrap()
+				n, _ = node0.FindSuccessor(nextStart)
 				if n == nil {
 					continue
 				}
 			}
-			<-node.SetFingerNode(i+1, n)
+			node.SetFingerNode(i+1, n)
 		}
 	}
 	return nil
@@ -91,7 +89,10 @@ func (node *localNode) updateOthers() {
 
 			id = node.ID().Diff(NewID(&subt, m))
 		}
-		pred, _ := (<-node.FindPredecessor(id)).Unwrap()
+		pred, err := node.FindPredecessor(id)
+		if err != nil {
+			log.Logger.Println(err.Error())
+		}
 		if pred != nil {
 			node.updatefingerTable(pred, node, i)
 		}
@@ -104,15 +105,21 @@ func (node *localNode) updateOthers() {
 //
 // See Chord paper figure 6.
 func (node *localNode) updatefingerTable(n, s Node, i int) {
-	fingNode, _ := (<-n.FingerNode(i)).Unwrap()
+	fingNode, err := n.FingerNode(i)
+	if err != nil {
+		log.Logger.Println(err.Error())
+	}
 	if fingNode == nil {
 		return
 	}
 	if idIntervalContainsIE(n.FingerStart(i), fingNode.ID(), s.ID()) {
-		if err := <-n.SetFingerNode(i, s); err != nil {
+		if err = n.SetFingerNode(i, s); err != nil {
 			return
 		}
-		pred, _ := (<-n.Predecessor()).Unwrap()
+		pred, err := n.Predecessor()
+		if err != nil {
+			log.Logger.Println(err.Error())
+		}
 		if pred == nil {
 			return
 		}

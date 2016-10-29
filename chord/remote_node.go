@@ -1,7 +1,6 @@
 package chord
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 )
@@ -35,11 +34,11 @@ func (node *remoteNode) FingerStart(i int) *ID {
 	return calcfingerStart(node.ID(), i-1)
 }
 
-func (node *remoteNode) FingerNode(i int) <-chan NodeErr {
+func (node *remoteNode) FingerNode(i int) (Node, error) {
 	return node.httpGetNodef("fingers/%d", i)
 }
 
-func (node *remoteNode) SetFingerNode(i int, fing Node) <-chan error {
+func (node *remoteNode) SetFingerNode(i int, fing Node) error {
 	return node.httpPut(fmt.Sprintf("fingers/%d", i), fing.TCPAddr().String())
 }
 
@@ -47,35 +46,31 @@ func (node *remoteNode) Heartbeat() {
 	node.httpHeartbeat("heartbeat")
 }
 
-func (node *remoteNode) Successor() <-chan NodeErr {
+func (node *remoteNode) Successor() (Node, error) {
 	return node.httpGetNodef("successor")
 }
 
-func (node *remoteNode) SuccessorList() <-chan NodesErr {
+func (node *remoteNode) SuccessorList() ([]Node, error) {
 	return node.httpGetNodesf("successors")
 }
 
-func (node *remoteNode) Predecessor() <-chan NodeErr {
+func (node *remoteNode) Predecessor() (Node, error) {
 	return node.httpGetNodef("predecessor")
 }
 
-func (node *remoteNode) FindSuccessor(id *ID) <-chan NodeErr {
+func (node *remoteNode) FindSuccessor(id *ID) (Node, error) {
 	return node.httpGetNodef("successors?id=%s", id.String())
 }
 
-func (node *remoteNode) FindPredecessor(id *ID) <-chan NodeErr {
+func (node *remoteNode) FindPredecessor(id *ID) (Node, error) {
 	return node.httpGetNodef("predecessors?id=%s", id.String())
 }
 
-func (node *remoteNode) SetSuccessorList(succs []Node) <-chan error {
-	buf := &bytes.Buffer{}
-	for _, succ := range succs {
-		fmt.Fprintf(buf, "%s\r\n", succ.TCPAddr())
-	}
-	return node.httpPut("successors", string(buf.Bytes()))
+func (node *remoteNode) SetSuccessor(succ Node) error {
+	return node.httpPut("successor", succ.TCPAddr().String())
 }
 
-func (node *remoteNode) SetPredecessor(pred Node) <-chan error {
+func (node *remoteNode) SetPredecessor(pred Node) error {
 	return node.httpPut("predecessor", pred.TCPAddr().String())
 }
 

@@ -1,16 +1,12 @@
 package chord
 
-import (
-	"net"
-	"sync"
-)
+import "net"
 
 // Holds a single local node and a set of remote nodes, allowing management of
 // remote node lifetimes.
 type nodePool struct {
 	lnode *localNode
 	nodes map[string]Node
-	mutex sync.Mutex
 }
 
 func newNodePool(laddr *net.TCPAddr) *nodePool {
@@ -24,11 +20,8 @@ func newNodePool(laddr *net.TCPAddr) *nodePool {
 }
 
 func (pool *nodePool) getOrCreateNode(addr *net.TCPAddr) Node {
-	pool.mutex.Lock()
-	defer pool.mutex.Unlock()
-
 	key := addr.String()
-	if node, ok := pool.nodes[key]; ok {
+	if node, ok := pool.nodes[key]; ok && node != nil {
 		return node
 	}
 	node := newRemoteNode(addr, pool)
@@ -37,9 +30,6 @@ func (pool *nodePool) getOrCreateNode(addr *net.TCPAddr) Node {
 }
 
 func (pool *nodePool) removeNode(node Node) {
-	pool.mutex.Lock()
-	defer pool.mutex.Unlock()
-
 	key := node.TCPAddr().String()
 	if node, ok := pool.nodes[key]; ok && node != pool.lnode {
 		pool.lnode.disassociateNode(node)
@@ -57,6 +47,9 @@ func (pool *nodePool) refresh() error {
 		}
 	}()
 
+	if err := pool.lnode.fixSuccessorList(); err != nil {
+		return err
+	}
 	if err := pool.lnode.stabilize(); err != nil {
 		return err
 	}

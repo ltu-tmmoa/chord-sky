@@ -9,25 +9,43 @@ import "math/rand"
 func (node *localNode) stabilize() error {
 	succ := node.successor()
 
-	x, err := (<-succ.Predecessor()).Unwrap()
+	x, err := succ.Predecessor()
 	if err != nil {
 		return err
 	}
 	if idIntervalContainsEE(node.ID(), succ.ID(), x.ID()) {
-		<-node.SetSuccessorList([]Node{x})
+		node.SetSuccessor(succ)
 	}
 	succ = node.successor()
 	return node.notify(succ)
 }
 
 func (node *localNode) notify(node0 Node) error {
-	pred, err := (<-node0.Predecessor()).Unwrap()
+	pred, err := node0.Predecessor()
 	if err != nil {
 		return err
 	}
 	if pred == nil || idIntervalContainsEE(pred.ID(), node0.ID(), node.ID()) {
-		<-node0.SetPredecessor(node)
+		if err = node0.SetPredecessor(node); err != nil {
+			return err
+		}
 	}
+	return nil
+}
+
+func (node *localNode) fixSuccessorList() error {
+	succ, _ := node.Successor()
+	succs := []Node{succ}
+
+	var err error
+	for i := 1; i < 3; i++ {
+		succ, err = succ.Successor()
+		if err != nil {
+			return err
+		}
+		succs = append(succs, succ)
+	}
+	node.setSuccessorList(succs)
 	return nil
 }
 
@@ -36,12 +54,11 @@ func (node *localNode) fixRandomFinger() error {
 }
 
 func (node *localNode) fixFinger(i int) error {
-	succ, err := (<-node.FindSuccessor(node.FingerStart(i))).Unwrap()
+	succ, err := node.FindSuccessor(node.FingerStart(i))
 	if err != nil {
 		return err
 	}
-	<-node.SetFingerNode(i, succ)
-	return nil
+	return node.SetFingerNode(i, succ)
 }
 
 func (node *localNode) fixAllFingers() error {

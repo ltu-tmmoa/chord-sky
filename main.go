@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
@@ -23,7 +24,7 @@ func init() {
 func main() {
 	// Force goroutine scheduling to be confined to one thread to avoid having
 	// to lock anything.
-	// runtime.GOMAXPROCS(1)
+	runtime.GOMAXPROCS(1)
 
 	flag.Parse()
 

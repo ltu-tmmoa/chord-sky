@@ -41,15 +41,24 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 
 	router.
 		HandleFunc("/info", func(w http.ResponseWriter, req *http.Request) {
+			var pred string
+			{
+				predNode, predErr := lnode.Predecessor()
+				if predErr != nil {
+					pred = predErr.Error()
+				} else {
+					pred = predNode.String()
+				}
+			}
 			buf := &bytes.Buffer{}
 			fmt.Fprintf(buf, "ID:          %s\r\n", lnode.ID())
-			fmt.Fprintf(buf, "Successor:   %s\r\n", <-lnode.Successor())
-			fmt.Fprintf(buf, "Predecessor: %s\r\n", <-lnode.Predecessor())
+			fmt.Fprintf(buf, "Successor:   %s\r\n", lnode.successor())
+			fmt.Fprintf(buf, "Predecessor: %s\r\n", pred)
 
 			fmt.Fprint(buf, "\r\nFinger Table:\r\n")
 			m := lnode.ID().Bits()
 			for i := 1; i <= m; i++ {
-				fmt.Fprintf(buf, "%3d:         %s\r\n", i, <-lnode.FingerNode(i))
+				fmt.Fprintf(buf, "%3d:         %s\r\n", i, lnode.fingerNode(i))
 			}
 			w.WriteHeader(http.StatusOK)
 			w.Write(buf.Bytes())
@@ -84,7 +93,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				req.Body.Close()
 			}
 			i, _ := strconv.Atoi(mux.Vars(req)["i"])
-			node, _ := (<-lnode.FingerNode(i)).Unwrap()
+			node := lnode.fingerNode(i)
 			httpWrite(w, http.StatusOK, node.TCPAddr())
 		}).
 		Methods(http.MethodGet)
@@ -98,7 +107,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				return
 			}
 			node := pool.getOrCreateNode(addr)
-			<-lnode.SetFingerNode(i, node)
+			lnode.SetFingerNode(i, node)
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)
@@ -117,7 +126,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 			if req.Body != nil {
 				req.Body.Close()
 			}
-			succ, _ := (<-lnode.Successor()).Unwrap()
+			succ := lnode.successor()
 			httpWrite(w, http.StatusOK, succ.TCPAddr())
 		}).
 		Methods(http.MethodGet)
@@ -127,7 +136,11 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 			if req.Body != nil {
 				req.Body.Close()
 			}
-			pred, _ := (<-lnode.Predecessor()).Unwrap()
+			pred, err := lnode.Predecessor()
+			if err != nil {
+				httpWrite(w, http.StatusFailedDependency, err.Error())
+				return
+			}
 			httpWrite(w, http.StatusOK, pred.TCPAddr())
 		}).
 		Methods(http.MethodGet)
@@ -147,11 +160,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				}
 			}
 			if id == nil {
-				succs, err := (<-lnode.SuccessorList()).Unwrap()
-				if err != nil {
-					httpWrite(w, http.StatusFailedDependency, err.Error())
-					return
-				}
+				succs, _ := lnode.SuccessorList()
 				buf := &bytes.Buffer{}
 				for _, succ := range succs {
 					fmt.Fprintf(buf, "%s\r\n", succ.TCPAddr())
@@ -159,7 +168,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusOK, string(buf.Bytes()))
 				return
 			}
-			node, err := (<-lnode.FindSuccessor(id)).Unwrap()
+			node, err := lnode.FindSuccessor(id)
 			if err != nil {
 				httpWrite(w, http.StatusFailedDependency, err.Error())
 				return
@@ -179,7 +188,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				httpWrite(w, http.StatusBadRequest, "Query parameter `id` required.")
 				return
 			}
-			node, err := (<-lnode.FindPredecessor(id)).Unwrap()
+			node, err := lnode.FindPredecessor(id)
 			if err != nil {
 				httpWrite(w, http.StatusFailedDependency, err.Error())
 				return
@@ -189,19 +198,15 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 		Methods(http.MethodGet)
 
 	router.
-		HandleFunc("/successors", func(w http.ResponseWriter, req *http.Request) {
-			addrs, err := httpReadBodyAsAddrs(req)
+		HandleFunc("/successor", func(w http.ResponseWriter, req *http.Request) {
+			addr, err := httpReadBodyAsAddr(req)
 			if err != nil {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			succs := make([]Node, 0, len(addrs))
-			for _, addr := range addrs {
-				succs = append(succs, pool.getOrCreateNode(addr))
-			}
-			err = <-lnode.SetSuccessorList(succs)
-			if err != nil {
-				httpWrite(w, http.StatusInternalServerError, err.Error())
+			succ := pool.getOrCreateNode(addr)
+			if err = lnode.SetSuccessor(succ); err != nil {
+				httpWrite(w, http.StatusFailedDependency, err.Error())
 				return
 			}
 			w.WriteHeader(http.StatusNoContent)
@@ -216,7 +221,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 				return
 			}
 			pred := pool.getOrCreateNode(addr)
-			<-lnode.SetPredecessor(pred)
+			lnode.SetPredecessor(pred)
 			w.WriteHeader(http.StatusNoContent)
 		}).
 		Methods(http.MethodPut)
@@ -249,6 +254,9 @@ func httpReadBodyAsAddr(req *http.Request) (*net.TCPAddr, error) {
 	body, err := httpReadBody(req)
 	if err != nil {
 		return nil, err
+	}
+	if len(body) == 0 {
+		return nil, errors.New("Cannot resolve empty body into TCP address.")
 	}
 	return net.ResolveTCPAddr("tcp", body)
 }

@@ -20,90 +20,35 @@ type Node interface {
 	//
 	// The result is only defined for i in [1,M], where M is the amount of bits
 	// set at node ring creation.
-	FingerNode(i int) <-chan NodeErr
+	FingerNode(i int) (Node, error)
 
 	// SetFingerNode attempts to set this node's ith finger to given node.
 	//
 	// The operation is only valid for i in [1,M], where M is the amount of
 	// bits set at node ring creation.
-	SetFingerNode(i int, fing Node) <-chan error
+	SetFingerNode(i int, fing Node) error
 
 	// Successor yields the next node in this node's ring.
-	Successor() <-chan NodeErr
+	Successor() (Node, error)
 
 	// SuccessorList yields a list of nodes succeeding the current one.
-	SuccessorList() <-chan NodesErr
+	SuccessorList() ([]Node, error)
 
 	// Predecessor yields the previous node in this node's ring.
-	Predecessor() <-chan NodeErr
+	Predecessor() (Node, error)
 
 	// FindSuccessor asks this node to find successor of given ID.
-	FindSuccessor(id *ID) <-chan NodeErr
+	FindSuccessor(id *ID) (Node, error)
 
 	// FindPredecessor asks this node to find a predecessor of given ID.
-	FindPredecessor(id *ID) <-chan NodeErr
+	FindPredecessor(id *ID) (Node, error)
 
-	// SetSuccessorList attempts to set this node's successors to given nodes.
-	SetSuccessorList(succs []Node) <-chan error
+	// SetSuccessor attempts to set this node's successors to given node.
+	SetSuccessor(succ Node) error
 
 	// SetPredecessor attempts to set this node's predecessor to given node.
-	SetPredecessor(pred Node) <-chan error
+	SetPredecessor(pred Node) error
 
 	// String turns Node into its canonical string representation.
 	String() string
-}
-
-// NodeErr represents the result of some node fetch operation.
-type NodeErr struct {
-	Node Node
-	Err  error
-}
-
-// Unwrap returns contained node and error.
-func (ne NodeErr) Unwrap() (Node, error) {
-	return ne.Node, ne.Err
-}
-
-func newChanNodeErr(f func() (Node, error)) <-chan NodeErr {
-	ch := make(chan NodeErr, 1)
-	go func() {
-		node, err := f()
-		ch <- NodeErr{
-			Node: node,
-			Err:  err,
-		}
-	}()
-	return ch
-}
-
-// NodesErr represents the result of some fetch operation of nodes.
-type NodesErr struct {
-	Nodes []Node
-	Err   error
-}
-
-// Unwrap returns contained node and error.
-func (ne NodesErr) Unwrap() ([]Node, error) {
-	return ne.Nodes, ne.Err
-}
-
-func newChanNodesErr(f func() ([]Node, error)) <-chan NodesErr {
-	ch := make(chan NodesErr, 1)
-	go func() {
-		nodes, err := f()
-		ch <- NodesErr{
-			Nodes: nodes,
-			Err:   err,
-		}
-	}()
-	return ch
-}
-
-func newChanErr(f func() error) <-chan error {
-	ch := make(chan error, 1)
-	go func() {
-		err := f()
-		ch <- err
-	}()
-	return ch
 }
