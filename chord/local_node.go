@@ -104,7 +104,7 @@ func (node *localNode) FindPredecessor(id *data.ID) (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		if idIntervalContainsEI(n0.ID(), succ.ID(), id) {
+		if data.IDIntervalContainsEI(n0.ID(), succ.ID(), id) {
 			return n0, nil
 		}
 		n0, err = closestPrecedingFinger(n0, id)
@@ -123,7 +123,7 @@ func closestPrecedingFinger(n Node, id *data.ID) (Node, error) {
 		if err != nil {
 			return nil, err
 		}
-		if idIntervalContainsEE(n.ID(), id, f.ID()) {
+		if data.IDIntervalContainsEE(n.ID(), id, f.ID()) {
 			return f, nil
 		}
 	}

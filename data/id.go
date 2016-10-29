@@ -71,3 +71,36 @@ func (id *ID) Eq(other *ID) bool {
 func (id *ID) String() string {
 	return id.value.Text(16)
 }
+
+// IDIntervalContainsEE checks if (start, stop) contains other.
+func IDIntervalContainsEE(start, stop, other *ID) bool {
+	a := other.Cmp(start)
+	b := other.Cmp(stop)
+
+	if start.Cmp(stop) < 0 {
+		return a > 0 && b < 0
+	}
+	return a > 0 || b < 0
+}
+
+// IDIntervalContainsEI checks if (start, stop] contains other.
+func IDIntervalContainsEI(start, stop, other *ID) bool {
+	a := other.Cmp(start)
+	b := other.Cmp(stop)
+
+	if start.Cmp(stop) < 0 {
+		return a > 0 && b <= 0
+	}
+	return a > 0 || b <= 0
+}
+
+// IDIntervalContainsIE checks if [start, stop) contains other.
+func IDIntervalContainsIE(start, stop, other *ID) bool {
+	a := other.Cmp(start)
+	b := other.Cmp(stop)
+
+	if start.Cmp(stop) < 0 {
+		return a >= 0 && b < 0
+	}
+	return a >= 0 || b < 0
+}

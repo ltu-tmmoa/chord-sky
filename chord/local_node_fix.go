@@ -1,6 +1,10 @@
 package chord
 
-import "math/rand"
+import (
+	"math/rand"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
+)
 
 // Attempts to fix any ring issues arising from joining or leaving chord ring
 // nodes.
@@ -13,7 +17,7 @@ func (node *localNode) stabilize() error {
 	if err != nil {
 		return err
 	}
-	if idIntervalContainsEE(node.ID(), succ.ID(), x.ID()) {
+	if data.IDIntervalContainsEE(node.ID(), succ.ID(), x.ID()) {
 		node.SetSuccessor(succ)
 	}
 	succ = node.successor()
@@ -25,7 +29,7 @@ func (node *localNode) notify(node0 Node) error {
 	if err != nil {
 		return err
 	}
-	if pred == nil || idIntervalContainsEE(pred.ID(), node0.ID(), node.ID()) {
+	if pred == nil || data.IDIntervalContainsEE(pred.ID(), node0.ID(), node.ID()) {
 		if err = node0.SetPredecessor(node); err != nil {
 			return err
 		}

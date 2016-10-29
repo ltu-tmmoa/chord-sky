@@ -62,7 +62,7 @@ func (node *localNode) initfingerTable(node0 Node) error {
 			nextStart := node.FingerStart(i + 1)
 
 			var n Node
-			if idIntervalContainsIE(node.ID(), this.ID(), nextStart) {
+			if data.IDIntervalContainsIE(node.ID(), this.ID(), nextStart) {
 				n = this
 			} else {
 				n, _ = node0.FindSuccessor(nextStart)
@@ -115,7 +115,7 @@ func (node *localNode) updatefingerTable(n, s Node, i int) {
 	if fingNode == nil {
 		return
 	}
-	if idIntervalContainsIE(n.FingerStart(i), fingNode.ID(), s.ID()) {
+	if data.IDIntervalContainsIE(n.FingerStart(i), fingNode.ID(), s.ID()) {
 		if err = n.SetFingerNode(i, s); err != nil {
 			return
 		}
