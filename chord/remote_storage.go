@@ -34,6 +34,13 @@ func (storage *remoteStorage) Get(key string) ([]byte, error) {
 	return body, nil
 }
 
+// GetKeyRange gets all keys that lexically located within [fromKey, toKey).
+func (storage *remoteStorage) GetKeyRange(fromKey, toKey string) ([]string, error) {
+	// TODO
+
+	return []string{}, nil
+}
+
 // Set stores provided key/value pair, potentially replacing an existing
 // such.
 func (storage *remoteStorage) Set(key string, value []byte) error {

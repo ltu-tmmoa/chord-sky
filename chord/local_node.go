@@ -28,7 +28,7 @@ func newLocalNodeID(addr *net.TCPAddr, id *ID) *localNode {
 	node := &localNode{
 		addr:    *addr,
 		id:      *id,
-		storage: new(data.MemoryStorage),
+		storage: data.NewMemoryStorage(),
 	}
 	node.ftable = newFingerTable(node)
 	return node
