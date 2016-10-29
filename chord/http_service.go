@@ -55,6 +55,10 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 			fmt.Fprintf(buf, "Successor:   %s\r\n", lnode.successor())
 			fmt.Fprintf(buf, "Predecessor: %s\r\n", pred)
 
+			fmt.Fprint(buf, "\r\nSuccessor List:\r\n")
+			for i, succ := range lnode.succlist {
+				fmt.Fprintf(buf, "%3d:         %s\r\n", i, succ)
+			}
 			fmt.Fprint(buf, "\r\nFinger Table:\r\n")
 			m := lnode.ID().Bits()
 			for i := 1; i <= m; i++ {
