@@ -1,17 +1,8 @@
-package chord
+package data
 
-import (
-	"crypto/sha1"
-	"fmt"
-	"math/big"
-	"net"
-)
+import "math/big"
 
-const (
-	hashBitsMax = sha1.Size * 8
-)
-
-// ID identifies some Chord node or key.
+// ID serves to identify something of interest.
 type ID struct {
 	value big.Int
 	bits  int
@@ -26,24 +17,13 @@ func NewID(value *big.Int, bits int) *ID {
 	return id
 }
 
-// ParseID takes a string `s` and convert it into an `*ID`.
-func ParseID(s string) (*ID, bool) {
-	return parseID(s, hashBitsMax)
-}
-
-func parseID(s string, bits int) (*ID, bool) {
+// ParseID parses a string `s` and a bit size `bits` into an `*ID`.
+func ParseID(s string, bits int) (*ID, bool) {
 	value := new(big.Int)
 	if _, ok := value.SetString(s, 16); !ok {
 		return nil, false
 	}
 	return NewID(value, bits), true
-}
-
-func hashAddr(addr *net.TCPAddr) *ID {
-	value := new(big.Int)
-	sum := sha1.Sum([]byte(addr.String()))
-	value.SetBytes(sum[:])
-	return NewID(value, hashBitsMax)
 }
 
 func (id *ID) truncate() {
@@ -90,10 +70,4 @@ func (id *ID) Eq(other *ID) bool {
 // String produces a canonical string representation of this ID.
 func (id *ID) String() string {
 	return id.value.Text(16)
-}
-
-func verifyIndexOrPanic(len, i int) {
-	if 1 > i || i > len {
-		panic(fmt.Sprintf("%d not in [1,%d]", i, len))
-	}
 }

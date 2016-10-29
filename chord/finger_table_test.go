@@ -3,6 +3,8 @@ package chord
 import (
 	"math/big"
 	"testing"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
 )
 
 const (
@@ -57,6 +59,6 @@ func TestFingerInterval(t *testing.T) {
 
 func newTable(id int64) *fingerTable {
 	return newFingerTable(&remoteNode{
-		id: *NewID(big.NewInt(id), M3),
+		id: *data.NewID(big.NewInt(id), M3),
 	})
 }

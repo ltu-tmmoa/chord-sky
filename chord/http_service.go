@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/ltu-tmmoa/chord-sky/data"
 	"github.com/ltu-tmmoa/chord-sky/log"
 )
 
@@ -154,7 +155,7 @@ func NewHTTPService(laddr *net.TCPAddr) *HTTPService {
 			if req.Body != nil {
 				req.Body.Close()
 			}
-			var id *ID
+			var id *data.ID
 			{
 				var err error
 				id, err = httpReadQueryID(req)
@@ -287,12 +288,12 @@ func httpReadBodyAsAddrs(req *http.Request) ([]*net.TCPAddr, error) {
 	return addrs, nil
 }
 
-func httpReadQueryID(req *http.Request) (*ID, error) {
+func httpReadQueryID(req *http.Request) (*data.ID, error) {
 	strID := req.URL.Query().Get("id")
 	if len(strID) == 0 {
 		return nil, nil
 	}
-	id, ok := ParseID(strID)
+	id, ok := parseID(strID)
 	if !ok {
 		return nil, errors.New("Query parameter `id` is not valid.")
 	}

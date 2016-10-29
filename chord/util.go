@@ -1,6 +1,12 @@
 package chord
 
-func idIntervalContainsEE(start, stop, other *ID) bool {
+import (
+	"fmt"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
+)
+
+func idIntervalContainsEE(start, stop, other *data.ID) bool {
 	a := other.Cmp(start)
 	b := other.Cmp(stop)
 
@@ -10,7 +16,7 @@ func idIntervalContainsEE(start, stop, other *ID) bool {
 	return a > 0 || b < 0
 }
 
-func idIntervalContainsEI(start, stop, other *ID) bool {
+func idIntervalContainsEI(start, stop, other *data.ID) bool {
 	a := other.Cmp(start)
 	b := other.Cmp(stop)
 
@@ -20,7 +26,7 @@ func idIntervalContainsEI(start, stop, other *ID) bool {
 	return a > 0 || b <= 0
 }
 
-func idIntervalContainsIE(start, stop, other *ID) bool {
+func idIntervalContainsIE(start, stop, other *data.ID) bool {
 	a := other.Cmp(start)
 	b := other.Cmp(stop)
 
@@ -28,4 +34,10 @@ func idIntervalContainsIE(start, stop, other *ID) bool {
 		return a >= 0 && b < 0
 	}
 	return a >= 0 || b < 0
+}
+
+func verifyIndexOrPanic(len, i int) {
+	if 1 > i || i > len {
+		panic(fmt.Sprintf("%d not in [1,%d]", i, len))
+	}
 }

@@ -9,7 +9,7 @@ import (
 // Node represents some Chord node, available either locally or remotely.
 type Node interface {
 	// ID returns node ID.
-	ID() *ID
+	ID() *data.ID
 
 	// TCPAddr provides node network address.
 	TCPAddr() *net.TCPAddr
@@ -18,7 +18,7 @@ type Node interface {
 	//
 	// The result is only defined for i in [1,M], where M is the amount of bits
 	// set at node ring creation.
-	FingerStart(i int) *ID
+	FingerStart(i int) *data.ID
 
 	// fingerNode resolves Chord node at given finger table offset i.
 	//
@@ -42,10 +42,10 @@ type Node interface {
 	Predecessor() (Node, error)
 
 	// FindSuccessor asks this node to find successor of given ID.
-	FindSuccessor(id *ID) (Node, error)
+	FindSuccessor(id *data.ID) (Node, error)
 
 	// FindPredecessor asks this node to find a predecessor of given ID.
-	FindPredecessor(id *ID) (Node, error)
+	FindPredecessor(id *data.ID) (Node, error)
 
 	// SetSuccessor attempts to set this node's successors to given node.
 	SetSuccessor(succ Node) error

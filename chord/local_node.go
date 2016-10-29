@@ -11,7 +11,7 @@ import (
 // localNode represents a potential member of a Chord ring.
 type localNode struct {
 	addr        net.TCPAddr
-	id          ID
+	id          data.ID
 	ftable      *fingerTable
 	succlist    []Node
 	predecessor Node
@@ -21,10 +21,10 @@ type localNode struct {
 // NewLocalNode creates a new local node from given address, which ought to be
 // the application's public-facing IP address.
 func newLocalNode(addr *net.TCPAddr) *localNode {
-	return newLocalNodeID(addr, hashAddr(addr))
+	return newLocalNodeID(addr, addrToID(addr))
 }
 
-func newLocalNodeID(addr *net.TCPAddr, id *ID) *localNode {
+func newLocalNodeID(addr *net.TCPAddr, id *data.ID) *localNode {
 	node := &localNode{
 		addr:    *addr,
 		id:      *id,
@@ -34,7 +34,7 @@ func newLocalNodeID(addr *net.TCPAddr, id *ID) *localNode {
 	return node
 }
 
-func (node *localNode) ID() *ID {
+func (node *localNode) ID() *data.ID {
 	return &node.id
 }
 
@@ -42,7 +42,7 @@ func (node *localNode) TCPAddr() *net.TCPAddr {
 	return &node.addr
 }
 
-func (node *localNode) FingerStart(i int) *ID {
+func (node *localNode) FingerStart(i int) *data.ID {
 	return node.ftable.fingerStart(i)
 }
 
@@ -84,7 +84,7 @@ func (node *localNode) Predecessor() (Node, error) {
 	return node.predecessor, nil
 }
 
-func (node *localNode) FindSuccessor(id *ID) (Node, error) {
+func (node *localNode) FindSuccessor(id *data.ID) (Node, error) {
 	pred, err := node.FindPredecessor(id)
 	if err != nil {
 		return nil, err
@@ -96,7 +96,7 @@ func (node *localNode) FindSuccessor(id *ID) (Node, error) {
 	return succ, nil
 }
 
-func (node *localNode) FindPredecessor(id *ID) (Node, error) {
+func (node *localNode) FindPredecessor(id *data.ID) (Node, error) {
 	var n0 Node
 	n0 = node
 	for {
@@ -117,7 +117,7 @@ func (node *localNode) FindPredecessor(id *ID) (Node, error) {
 // Returns closest finger preceding ID.
 //
 // See Chord paper figure 4.
-func closestPrecedingFinger(n Node, id *ID) (Node, error) {
+func closestPrecedingFinger(n Node, id *data.ID) (Node, error) {
 	for i := n.ID().Bits(); i > 0; i-- {
 		f, err := n.FingerNode(i)
 		if err != nil {

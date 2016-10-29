@@ -1,10 +1,21 @@
-package chord
+package data
 
-import "testing"
+import (
+	"math/big"
+	"testing"
+)
+
+const (
+	bits = 3
+)
+
+func newID64(value int64, bits int) *ID {
+	return NewID(big.NewInt(value), bits)
+}
 
 func TestHashCmp(t *testing.T) {
-	a := newID64(5, M3)
-	b := newID64(4, M3)
+	a := newID64(5, bits)
+	b := newID64(4, bits)
 
 	if r := a.Cmp(a); r != 0 {
 		t.Errorf("%v.Cmp(%v) %v != 0", a, a, r)
@@ -21,8 +32,8 @@ func TestHashCmp(t *testing.T) {
 }
 
 func TestHashDiff(t *testing.T) {
-	a := newID64(5, M3)
-	b := newID64(1, M3)
+	a := newID64(5, bits)
+	b := newID64(1, bits)
 
 	if r := a.Diff(a).BigInt().Int64(); r != 0 {
 		t.Errorf("%v.Diff(%v) %v != 0", a, a, r)
@@ -40,7 +51,7 @@ func TestHashDiff(t *testing.T) {
 
 func TestParseID(t *testing.T) {
 	testParseID3 := func(t *testing.T, s string, expectedID int64) {
-		id, ok := parseID(s, M3)
+		id, ok := ParseID(s, bits)
 		if !ok {
 			t.Errorf("Failed to parse ID: %s", s)
 			return

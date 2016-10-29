@@ -10,7 +10,7 @@ import (
 // Represents some Chord node available remotely.
 type remoteNode struct {
 	addr    net.TCPAddr
-	id      ID
+	id      data.ID
 	pool    *nodePool
 	storage data.Storage
 }
@@ -18,12 +18,12 @@ type remoteNode struct {
 func newRemoteNode(addr *net.TCPAddr, pool *nodePool) *remoteNode {
 	return &remoteNode{
 		addr: *addr,
-		id:   *hashAddr(addr),
+		id:   *addrToID(addr),
 		pool: pool,
 	}
 }
 
-func (node *remoteNode) ID() *ID {
+func (node *remoteNode) ID() *data.ID {
 	return &node.id
 }
 
@@ -31,7 +31,7 @@ func (node *remoteNode) TCPAddr() *net.TCPAddr {
 	return &node.addr
 }
 
-func (node *remoteNode) FingerStart(i int) *ID {
+func (node *remoteNode) FingerStart(i int) *data.ID {
 	m := node.ID().Bits()
 	verifyIndexOrPanic(m, i)
 	return calcfingerStart(node.ID(), i-1)
@@ -61,11 +61,11 @@ func (node *remoteNode) Predecessor() (Node, error) {
 	return node.httpGetNodef("predecessor")
 }
 
-func (node *remoteNode) FindSuccessor(id *ID) (Node, error) {
+func (node *remoteNode) FindSuccessor(id *data.ID) (Node, error) {
 	return node.httpGetNodef("successors?id=%s", id.String())
 }
 
-func (node *remoteNode) FindPredecessor(id *ID) (Node, error) {
+func (node *remoteNode) FindPredecessor(id *data.ID) (Node, error) {
 	return node.httpGetNodef("predecessors?id=%s", id.String())
 }
 

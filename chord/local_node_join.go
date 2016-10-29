@@ -3,6 +3,7 @@ package chord
 import (
 	"math/big"
 
+	"github.com/ltu-tmmoa/chord-sky/data"
 	"github.com/ltu-tmmoa/chord-sky/log"
 )
 
@@ -83,13 +84,13 @@ func (node *localNode) initfingerTable(node0 Node) error {
 func (node *localNode) updateOthers() {
 	m := node.ID().Bits()
 	for i := 2; i <= m; i++ {
-		var id *ID
+		var id *data.ID
 		{
 			subt := big.Int{}
 			subt.SetInt64(2)
 			subt.Exp(&subt, big.NewInt(int64(i-1)), nil)
 
-			id = node.ID().Diff(NewID(&subt, m))
+			id = node.ID().Diff(data.NewID(&subt, m))
 		}
 		pred, err := node.FindPredecessor(id)
 		if err != nil {

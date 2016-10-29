@@ -4,6 +4,8 @@ import (
 	"math/big"
 	"net"
 	"testing"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
 )
 
 func fakeAddr(id byte) *net.TCPAddr {
@@ -13,8 +15,8 @@ func fakeAddr(id byte) *net.TCPAddr {
 	}
 }
 
-func newID64(value int64, bits int) *ID {
-	return NewID(big.NewInt(value), bits)
+func newID64(value int64, bits int) *data.ID {
+	return data.NewID(big.NewInt(value), bits)
 }
 
 func TestIdIntervalContainsEE(t *testing.T) {
@@ -119,7 +121,7 @@ func TestIdIntervalContainsIE(t *testing.T) {
 	}
 }
 
-func prepareIntervalTester(t *testing.T, f func(*ID, *ID, *ID) bool) func(start, stop int64) func(bool) func(int64) {
+func prepareIntervalTester(t *testing.T, f func(*data.ID, *data.ID, *data.ID) bool) func(start, stop int64) func(bool) func(int64) {
 	return func(start, stop int64) func(bool) func(int64) {
 		return func(contains bool) func(int64) {
 			return func(other int64) {

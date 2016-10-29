@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+
+	"github.com/ltu-tmmoa/chord-sky/data"
 )
 
 // Holds a collection of related Chord Node fingers.
@@ -28,7 +30,7 @@ func newFingerTable(owner Node) *fingerTable {
 }
 
 // n + 2^i
-func calcfingerStart(id *ID, i int) *ID {
+func calcfingerStart(id *data.ID, i int) *data.ID {
 	n := id.BigInt()
 
 	// addend = 2^i
@@ -39,14 +41,14 @@ func calcfingerStart(id *ID, i int) *ID {
 	result := big.Int{}
 	result.Add(n, &addend)
 
-	return NewID(&result, id.Bits())
+	return data.NewID(&result, id.Bits())
 }
 
 // Resolves finger interval start ID at given finger table offset i.
 //
 // The result is only defined for i in [1,M+1], where M is the amount of table
 // rows.
-func (table *fingerTable) fingerStart(i int) *ID {
+func (table *fingerTable) fingerStart(i int) *data.ID {
 	table.verifyTableIndexOrPanic(i)
 	return &table.fingers[i-1].start
 }
@@ -90,7 +92,7 @@ func (table *fingerTable) setFingerNode(i int, n Node) {
 }
 
 // Removes all nodes from table matching given ID.
-func (table *fingerTable) removeFingerNodesByID(id *ID) {
+func (table *fingerTable) removeFingerNodesByID(id *data.ID) {
 	for i, fing := range table.fingers {
 		if n := fing.node; n != nil && n.ID().Eq(id) {
 			table.fingers[i].node = nil
@@ -107,6 +109,6 @@ func (table *fingerTable) String() string {
 }
 
 type finger struct {
-	start ID
+	start data.ID
 	node  Node
 }
