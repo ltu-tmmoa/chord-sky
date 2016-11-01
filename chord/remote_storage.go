@@ -7,6 +7,7 @@ import (
 	"github.com/ltu-tmmoa/chord-sky/data"
 	 // "encoding/base64"
 	  "net/url"
+	  "bytes"
 )
 
 type remoteStorage struct {
@@ -49,7 +50,7 @@ func (storage *remoteStorage) GetKeyRange(fromKey, toKey *data.ID) ([]*data.ID, 
 	  node := storage.node
 
 	  // http://<IP:PORT>/storage?fromKey=x00&toKey=x11
-	  url, err := url.Parse(fmt.Sprintf("http://%s/storage", node.TCPAddr().String()))
+	  url, err := url.Parse(fmt.Sprintf("http://%s/storage/range", node.TCPAddr().String()))
 	  if err != nil {
 		    node.disconnect(err)
 		    return nil, err
@@ -72,7 +73,9 @@ func (storage *remoteStorage) GetKeyRange(fromKey, toKey *data.ID) ([]*data.ID, 
 		    node.disconnect(err)
 		    return nil, err
 	  }
-	  return body, nil
+	  fmt.Println(body)
+	  return nil,nil
+	  //return body, nil
 }
 
 // Set stores provided key/value pair, potentially replacing an existing
@@ -84,7 +87,7 @@ func (storage *remoteStorage) Set(key *data.ID, value []byte) error {
 
 	  // Base64 encoding, RFC 4648.
 	  // str := base64.StdEncoding.EncodeToString(value)
-	  req, err := http.NewRequest(http.MethodPut, url, value)
+	  req, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(value))
 	  if req.Body != nil {
 		    defer req.Body.Close()
 	  }
