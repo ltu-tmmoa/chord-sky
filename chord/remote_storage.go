@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"github.com/ltu-tmmoa/chord-sky/data"
-	  "encoding/base64"
+	 // "encoding/base64"
 	  "net/url"
 )
 
@@ -40,6 +40,7 @@ func (storage *remoteStorage) Get(key *data.ID) ([]byte, error) {
 		node.disconnect(err)
 		return nil, err
 	}
+
 	return body, nil
 }
 
@@ -82,8 +83,8 @@ func (storage *remoteStorage) Set(key *data.ID, value []byte) error {
 	  url := fmt.Sprintf("http://%s/storage/%s", node.TCPAddr().String(), key.String())
 
 	  // Base64 encoding, RFC 4648.
-	  str := base64.StdEncoding.EncodeToString(value)
-	  req, err := http.NewRequest(http.MethodPut, url, str)
+	  // str := base64.StdEncoding.EncodeToString(value)
+	  req, err := http.NewRequest(http.MethodPut, url, value)
 	  if req.Body != nil {
 		    defer req.Body.Close()
 	  }
