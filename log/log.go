@@ -9,5 +9,5 @@ import (
 var Logger *log.Logger
 
 func init() {
-	Logger = log.New(os.Stdout, "chord-sky ", log.Ltime | log.Ldate | log.Lshortfile | log.LUTC)
+	Logger = log.New(os.Stdout, "chord-sky ", log.Ltime|log.Ldate|log.Lshortfile|log.LUTC)
 }

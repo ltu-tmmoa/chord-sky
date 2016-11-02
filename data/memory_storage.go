@@ -1,6 +1,9 @@
 package data
 
-import "fmt"
+import (
+	"crypto/sha1"
+	"fmt"
+)
 
 // MemoryStorage provides in-memory storage.
 type MemoryStorage struct {
@@ -49,4 +52,26 @@ func (storage *MemoryStorage) Set(key *ID, value []byte) error {
 func (storage *MemoryStorage) Remove(key *ID) error {
 	delete(storage.data, key.String())
 	return nil
+}
+
+// GetKeys gets all keys that are located on this storage node.
+func (storage *MemoryStorage) GetAllKeys() ([]*ID, error) {
+	keys := []*ID{}
+	for skey := range storage.data {
+		key, ok := parseID(skey)
+		if !ok {
+			panic(fmt.Sprint("Illegal key in memory storage:", skey))
+		}
+		keys = append(keys, key)
+	}
+	return keys, nil
+}
+
+// Haidar's fix ;)
+const (
+	idBits = sha1.Size * 8
+)
+
+func parseID(s string) (*ID, bool) {
+	return ParseID(s, idBits)
 }
