@@ -61,11 +61,11 @@ func main() {
 		}
 	}()
 
-	  storageService := chord.NewHTTPStorageService(laddr)
+	storageService := chord.NewHTTPStorageService(laddr)
 
 	log.Logger.Println("Accepting incoming connections on", laddr, "...")
 	http.Handle("/node/", http.StripPrefix("/node", chordService))
-	  http.Handle("/storage/", http.StripPrefix("/storage", storageService))
+	http.Handle("/storage/", http.StripPrefix("/storage", storageService))
 	httpServer := http.Server{
 		Addr:         laddr.String(),
 		ReadTimeout:  5 * time.Second,
