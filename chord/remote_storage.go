@@ -8,6 +8,7 @@ import (
 	 // "encoding/base64"
 	  "net/url"
 	  "bytes"
+	  "errors"
 )
 
 type remoteStorage struct {
@@ -49,15 +50,15 @@ func (storage *remoteStorage) Get(key *data.ID) ([]byte, error) {
 func (storage *remoteStorage) GetKeyRange(fromKey, toKey *data.ID) ([]*data.ID, error) {
 	  node := storage.node
 
-	  // http://<IP:PORT>/storage?fromKey=x00&toKey=x11
-	  url, err := url.Parse(fmt.Sprintf("http://%s/storage/range", node.TCPAddr().String()))
+	  // http://<IP:PORT>/storage/keys?from=x00&to=x11
+	  url, err := url.Parse(fmt.Sprintf("http://%s/storage/keys", node.TCPAddr().String()))
 	  if err != nil {
 		    node.disconnect(err)
 		    return nil, err
 	  }
 	  q := url.Query()
-	  q.Set("fromKey", fromKey.String())
-	  q.Set("toKey",toKey.String())
+	  q.Set("from", fromKey.String())
+	  q.Set("to",toKey.String())
 
 	  res, err := http.Get(url.String())
 	  if err != nil {
@@ -73,10 +74,23 @@ func (storage *remoteStorage) GetKeyRange(fromKey, toKey *data.ID) ([]*data.ID, 
 		    node.disconnect(err)
 		    return nil, err
 	  }
-	  fmt.Println(body)
-	  return nil,nil
+	  slice:= bytes.Split(body, []byte{'\n'})
+	  keys := make([]*data.ID, 0, len(slice))
+	  for _, v := range slice{
+		    if len(slice) == 0 {
+				return nil, nil
+		    }
+		    key, ok1 := parseID(string(v))
+		    if !ok1 {
+				err = errors.New("Something went wrong")
+				return nil, err
+		    }
+		    keys = append(keys, key)
+	  }
+	  return keys,nil
 	  //return body, nil
 }
+
 
 // Set stores provided key/value pair, potentially replacing an existing
 // such.

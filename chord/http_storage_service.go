@@ -11,6 +11,7 @@ import (
 	  "fmt"
 	  "io/ioutil"
 	  "runtime/debug"
+	  "bytes"
 )
 
 // HTTPStorageService manages local storage, exposing it as an HTTP service by
@@ -31,6 +32,37 @@ func NewHTTPStorageService(laddr *net.TCPAddr) *HTTPStorageService {
 	  storage := service.storage
 	  router := service.router
 
+	  router.
+	  HandleFunc("/keys", func(w http.ResponseWriter, req *http.Request) {
+
+		    if req.Body != nil {
+				defer req.Body.Close()
+		    }
+		    strfromKey := req.URL.Query().Get("from")
+		    strtoKey := req.URL.Query().Get("to")
+		    fromKey, ok1 := parseID(strfromKey)
+		    toKey, ok2 := parseID(strtoKey)
+		    if !ok1 || !ok2 {
+				strErr := fmt.Sprintf("The `from` is %v and `to` is %v", ok1, ok2)
+				err := errors.New(strErr)
+				httpWrite(w, http.StatusBadRequest, err.Error())
+				return
+		    }
+
+		    keys, err := storage.GetKeyRange(fromKey, toKey)
+		    if err!=nil{
+				httpWrite(w, http.StatusInternalServerError, err.Error())
+				return
+		    }
+		    var buffer bytes.Buffer
+		    for _, v := range keys{
+				buffer.WriteString(v.String())
+				buffer.WriteString("\n")
+		    }
+		    httpStorageWrite(w, http.StatusOK, buffer.String())
+
+	  }).
+		    Methods(http.MethodGet)
 
 	  router.
 	  HandleFunc("/{id}", func(w http.ResponseWriter, req *http.Request) {
@@ -46,7 +78,7 @@ func NewHTTPStorageService(laddr *net.TCPAddr) *HTTPStorageService {
 				return
 		    }
 		    value, _ := storage.Get(id)
-		    httpStorageWrite(w, http.StatusOK, value)
+		    httpStorageWrite(w, http.StatusOK, string(value))
 
 
 	  }).
@@ -71,7 +103,7 @@ func NewHTTPStorageService(laddr *net.TCPAddr) *HTTPStorageService {
 				return
 		    }
 		    storage.Set(id, arr)
-		    httpStorageWrite(w, http.StatusOK, nil)
+		    httpStorageWrite(w, http.StatusOK, "")
 
 	  }).
 		    Methods(http.MethodPut)
@@ -94,35 +126,10 @@ func NewHTTPStorageService(laddr *net.TCPAddr) *HTTPStorageService {
 	  }).
 		    Methods(http.MethodDelete)
 
-	  router.
-	  HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-
-		    if req.Body != nil {
-				defer req.Body.Close()
-		    }
-		    strfromKey, _ := mux.Vars(req)["fromKey"]
-		    strtoKey, _ := mux.Vars(req)["toKey"]
-
-
-		    fromKey, ok1 := parseID(strfromKey)
-		    toKey, ok2 := parseID(strtoKey)
-		    if !ok1 || !ok2 {
-				err := errors.New("file `id` is not valid.")
-				httpWrite(w, http.StatusBadRequest, err.Error())
-				return
-		    }
-		    keys, err := storage.GetKeyRange(fromKey, toKey)
-		    if err!=nil{
-				httpWrite(w, http.StatusInternalServerError, err.Error())
-				return
-		    }
-		    httpStorageWrite(w, http.StatusOK, keys)
-
-	  }).
-		    Methods(http.MethodDelete)
 
 	  return &service
 }
+
 
 func httpStorageWrite(w http.ResponseWriter, status int, body interface{}) {
 	  w.WriteHeader(status)
