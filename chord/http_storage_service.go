@@ -9,7 +9,6 @@ import (
 	"github.com/ltu-tmmoa/chord-sky/log"
 	"html/template"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"path/filepath"
 	"runtime/debug"
@@ -24,7 +23,7 @@ type HTTPStorageService struct {
 
 // HTTPStorageService creates a new HTTP storage, exposable as a service on the
 // identified local TCP interface.
-func NewHTTPStorageService(laddr *net.TCPAddr) *HTTPStorageService {
+func NewHTTPStorageService() *HTTPStorageService {
 	service := HTTPStorageService{
 		storage: data.NewMemoryStorage(),
 		router:  mux.NewRouter(),
