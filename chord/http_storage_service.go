@@ -38,20 +38,6 @@ func NewHTTPStorageService() *HTTPStorageService {
 			if req.Body != nil {
 				defer req.Body.Close()
 			}
-
-			absPath, _ := filepath.Abs("../ltu-tmmoa/chord-sky/template/index.html")
-			t, _ := template.ParseFiles(absPath)
-			t.Execute(w, nil)
-
-		}).
-		Methods(http.MethodGet)
-
-	router.
-		HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-
-			if req.Body != nil {
-				defer req.Body.Close()
-			}
 			req.ParseForm()
 
 			strID := req.Form["key"][0]

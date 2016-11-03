@@ -62,8 +62,11 @@ func main() {
 	}()
 
 	storageService := chord.NewHTTPStorageService()
+	homepage := chord.NewHTTPHomepage()
 
 	log.Logger.Println("Accepting incoming connections on", laddr, "...")
+
+	http.Handle("/", homepage)
 	http.Handle("/node/", http.StripPrefix("/node", chordService))
 	http.Handle("/storage/", http.StripPrefix("/storage", storageService))
 	httpServer := http.Server{
