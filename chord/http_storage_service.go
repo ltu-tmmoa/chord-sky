@@ -1,16 +1,16 @@
 package chord
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/ltu-tmmoa/chord-sky/data"
 	"github.com/ltu-tmmoa/chord-sky/log"
-
-	"bytes"
-	"fmt"
+	"html/template"
 	"io/ioutil"
-	"net"
 	"net/http"
+	"path/filepath"
 	"runtime/debug"
 )
 
@@ -23,7 +23,7 @@ type HTTPStorageService struct {
 
 // HTTPStorageService creates a new HTTP storage, exposable as a service on the
 // identified local TCP interface.
-func NewHTTPStorageService(laddr *net.TCPAddr) *HTTPStorageService {
+func NewHTTPStorageService() *HTTPStorageService {
 	service := HTTPStorageService{
 		storage: data.NewMemoryStorage(),
 		router:  mux.NewRouter(),
@@ -31,6 +31,34 @@ func NewHTTPStorageService(laddr *net.TCPAddr) *HTTPStorageService {
 
 	storage := service.storage
 	router := service.router
+
+	router.
+		HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+
+			if req.Body != nil {
+				defer req.Body.Close()
+			}
+			req.ParseForm()
+
+			strID := req.Form["key"][0]
+			strValue := req.Form["value"][0]
+
+			fmt.Printf("Key: %s, Value: %s", strID, strValue)
+			id, ok := parseID(strID)
+			if !ok {
+				err := errors.New("file `id` is not valid.")
+				httpWrite(w, http.StatusBadRequest, err.Error())
+				return
+			} else {
+				absPath, _ := filepath.Abs("../ltu-tmmoa/chord-sky/template/index.html")
+				t, _ := template.ParseFiles(absPath)
+				t.Execute(w, nil)
+			}
+			arr := []byte(strValue)
+			storage.Set(id, arr)
+
+		}).
+		Methods(http.MethodPost)
 
 	router.
 		HandleFunc("/keys", func(w http.ResponseWriter, req *http.Request) {
