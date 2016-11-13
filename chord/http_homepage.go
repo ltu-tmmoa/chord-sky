@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"runtime/debug"
+	  "os"
 )
 
 type HTTPHomepage struct {
@@ -25,15 +26,15 @@ func NewHTTPHomepage() *HTTPHomepage {
 			if req.Body != nil {
 				defer req.Body.Close()
 			}
-
-			absPath, _ := filepath.Abs("../ltu-tmmoa/chord-sky/template/index.html")
+		  	goPath := os.Getenv("GOPATH")
+			absPath, _ := filepath.Abs(goPath+"/src/github.com/ltu-tmmoa/chord-sky/template/index.html")
 			t, _ := template.ParseFiles(absPath)
 			t.Execute(w, nil)
 
 		}).
 		Methods(http.MethodGet)
 
-	  return &service
+	return &service
 }
 
 func (service *HTTPHomepage) ServeHTTP(w http.ResponseWriter, req *http.Request) {
