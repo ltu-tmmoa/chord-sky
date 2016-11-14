@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"runtime/debug"
+	  "os"
 )
 
 // HTTPStorageService manages local storage, exposing it as an HTTP service by
@@ -50,8 +51,8 @@ func NewHTTPStorageService() *HTTPStorageService {
 				httpWrite(w, http.StatusBadRequest, err.Error())
 				return
 			} else {
-				absPath, _ := filepath.Abs("../ltu-tmmoa/chord-sky/template/index.html")
-				t, _ := template.ParseFiles(absPath)
+				  goPath := os.Getenv("GOPATH")
+				  absPath, _ := filepath.Abs(goPath+"/src/github.com/ltu-tmmoa/chord-sky/template/index.html")
 				t.Execute(w, nil)
 			}
 			arr := []byte(strValue)
