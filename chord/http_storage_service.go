@@ -53,6 +53,7 @@ func NewHTTPStorageService() *HTTPStorageService {
 			} else {
 				  goPath := os.Getenv("GOPATH")
 				  absPath, _ := filepath.Abs(goPath+"/src/github.com/ltu-tmmoa/chord-sky/template/index.html")
+				t, _ := template.ParseFiles(absPath)
 				t.Execute(w, nil)
 			}
 			arr := []byte(strValue)
